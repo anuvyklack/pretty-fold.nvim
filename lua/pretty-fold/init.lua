@@ -18,7 +18,7 @@ local default_config = {
    --       with an equal number of spaces.
    comment_signs = nil,
 
-   match_the_close_pattern = true,
+   add_close_pattern = true,
    matchup_patterns = {
       { '{', '}' },
       { '%(', ')' }, -- % is for escape pattern char

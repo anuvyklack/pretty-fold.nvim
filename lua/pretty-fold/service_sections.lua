@@ -51,7 +51,7 @@ function M.content(config)
 
    content = content:gsub('%s*$', '')
 
-   do -- Add matchup pattern
+   if config.add_close_pattern then  -- Add matchup pattern
       local last_line = fn.getline(v.foldend)
       last_line = last_line:gsub(comment_signs[1]..'.*$', '')
       last_line = vim.trim(last_line)
