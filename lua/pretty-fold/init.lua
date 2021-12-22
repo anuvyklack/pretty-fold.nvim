@@ -4,9 +4,29 @@ local sections = require('pretty-fold.service_sections')
 local M = {}
 
 local fill_char = '•'
+
+-- local general_config = {
 local default_config = {
    fill_char = fill_char,
-   remove_fold_markers = true;
+   remove_fold_markers = true,
+
+   -- nil : Do nothing.
+   --  1  : Delete all comment signs from the line.
+   --  2  : Delete the first comment sign at the beginning of line (if any).
+   --  3  : Replace all comment signs with equal number of spaces.
+   --  4  : Replace the first comment sign at the beginning of line (if any)
+   --       with an equal number of spaces.
+   comment_signs = nil,
+
+   match_the_close_pattern = true,
+   matchup_patterns = {
+      { '{', '}' },
+      { '%(', ')' }, -- % is for escape pattern char
+      { '%[', ']' }, -- % is for escape pattern char
+      { 'if', 'end' },
+      { 'do', 'end' },
+      { 'for', 'end' },
+   },
    sections = {
       left = {
          'content',
@@ -19,6 +39,10 @@ local default_config = {
       }
    }
 }
+
+-- local default_config = { }
+
+-- local foldmethods = { 'manual', 'indent', 'expr', 'marker', 'syntax' }
 
 local function fold_text(config)
    local r = { left = {}, right = {} }
@@ -56,13 +80,9 @@ local function fold_text(config)
    end
 
    local result = ''
-   for _, str in ipairs(r.left) do
-      result = result .. str
-   end
+   for _, str in ipairs(r.left)  do result = result .. str end
    result = result .. r.expansion_str
-   for _, str in ipairs(r.right) do
-      result = result .. str
-   end
+   for _, str in ipairs(r.right) do result = result .. str end
 
    return result
 end
@@ -70,10 +90,11 @@ end
 function M.setup(config)
    config = vim.tbl_deep_extend("force", default_config, config or {})
 
-   ---Global table with all 'foldtext' functions.
+   -- Global table with all 'foldtext' functions.
    _G.pretty_fold = _G.pretty_fold or {}
 
    local tid = math.random(1000)
+
    _G.pretty_fold['f'..tid] = function()
       return fold_text(config)
    end

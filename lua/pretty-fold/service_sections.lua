@@ -4,16 +4,21 @@ local opt = vim.opt
 local fn = vim.fn
 local M = {}
 
+-- config.match_the_close_pattern
+
 ---@return string content the content of the first nonblank line of the folding region
 function M.content(config)
    local line_num = v.foldstart
    local content = fn.getline(line_num)
    local indent_num = fn.indent(line_num)
 
-   local comment_signs = vim.split(bo.commentstring, '%s')
+   local comment_signs = fn.split(bo.commentstring, '%s')
+   for i, p in ipairs(comment_signs) do
+      comment_signs[i] = vim.pesc(p)
+   end
 
-   -- Remove all fold markers from string.
-   if config.remove_fold_markers then
+   do -- Remove all fold markers from string.
+   -- if config.remove_fold_markers then
       for _, fdm in ipairs( opt.foldmarker:get() ) do
          content = content:gsub(fdm..'%d*', '')
       end
@@ -36,27 +41,53 @@ function M.content(config)
 
    if config.sections.left[1] == 'content' then
       if indent_num > 1 then
-         -- Replace indentation with 'fill_char'-s.
-         content = content:gsub('^%s+', string.rep(config.fill_char, indent_num - 1)..' ')
+         -- Replace indentation with 'fill_char's.
+         content = content:gsub('^%s+',
+            string.rep(config.fill_char, indent_num - 1)..' ')
       end
    else
       content = content:gsub('^%s*', ' ')  -- Strip all indentation.
    end
 
-   content = content:gsub('%s*$', '')..' '
+   content = content:gsub('%s*$', '')
 
-   -- Exchange all spaces between comment sign and text with 'fill_char'.
-   -- For example: '//       Text' -> '// +++++ Text'
-   local blank_substr = content:match( comment_signs[1]..'(%s+)' ) or ''
-   if #blank_substr > 2 then
-      content = content:gsub(
-         comment_signs[1]..'(%s+)',
-         comment_signs[1]..' '..string.rep(config.fill_char, #blank_substr - 2)..' ',
-         1)
+   do -- Add matchup pattern
+      local last_line = fn.getline(v.foldend)
+      last_line = last_line:gsub(comment_signs[1]..'.*$', '')
+      last_line = vim.trim(last_line)
+      for _, p in ipairs(config.matchup_patterns) do
+         if content:find( p[1] ) and last_line:find( p[2] ) then
+
+            local ellipsis = #p[1] == 1 and '...' or ' ... '
+
+            local comment_str = content:match('%s*'..comment_signs[1]..'.*$')
+            if comment_str then
+               content = content:gsub( vim.pesc(comment_str),
+                  -- ellipsis..p[2]..' '..comment_str)
+                  ellipsis..p[2]..comment_str)
+            else
+               content = content..ellipsis..p[2]
+            end
+
+            break
+         end
+      end
    end
+
+   content = content..' '
 
    -- Replace all tabs with spaces with respect to %tabstop.
    content = content:gsub('\t', string.rep(' ', bo.tabstop))
+
+   -- Exchange all occurrences of multiple spaces inside the text with
+   -- 'fill_char', like this:
+   --    "//      Text"  ->  "// ==== Text"
+   for blank_substr in content:gmatch( '%s%s%s+' ) do
+      content = content:gsub(
+         blank_substr,
+         ' '..string.rep(config.fill_char, #blank_substr - 2)..' ',
+         1)
+   end
 
    return content
 end
