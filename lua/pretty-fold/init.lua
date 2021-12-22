@@ -1,6 +1,6 @@
 local wo = vim.wo
 local fn = vim.fn
-local sections = require('service_sections')
+local sections = require('pretty-fold.service_sections')
 local M = {}
 
 local fill_char = '•'
@@ -20,10 +20,9 @@ local default_config = {
    }
 }
 
--- It skips first blank line or line that contains only comment sign and folder
--- mark.
-function _G.pretty_fold_text(config)
+local function fold_text(config)
    local r = { left = {}, right = {} }
+
    for _, lr in ipairs({'left', 'right'}) do
       for _, s in ipairs(config.sections[lr] or {}) do
          local sec = sections[s]
@@ -71,16 +70,19 @@ end
 function M.setup(config)
    config = vim.tbl_deep_extend("force", default_config, config or {})
 
-   -- Global table with of config tabels.
-   _G.pretty_fold_conf = _G.pretty_fold_conf or {}
+   ---Global table with all 'foldtext' functions.
+   _G.pretty_fold = _G.pretty_fold or {}
 
    local tid = math.random(1000)
-   _G.pretty_fold_conf[tid] = config
-
-   local fold_func = loadstring("return 'v:lua.pretty_fold_text(_G.pretty_fold_conf["..tid.."])'")
+   _G.pretty_fold['f'..tid] = function()
+      return fold_text(config)
+   end
 
    vim.opt.fillchars:append('fold:'..config.fill_char)
-   vim.opt.foldtext = fold_func()
+   vim.opt.foldtext = 'v:lua._G.pretty_fold.f'..tid..'()'
+
+   -- _G.pretty_fold.config = _G.pretty_fold.config or {}
+   -- _G.pretty_fold.config[tid] = config
 end
 
 
@@ -90,8 +92,3 @@ end
 -- end
 
 return M
-
--- vim.opt_local.fillchars:append('fold:•')
--- vim.opt_local.foldtext = 'v:lua.custom_fold_text()'
-
--- opt.foldtext = 'v:lua.custom_fold_text("•")'
