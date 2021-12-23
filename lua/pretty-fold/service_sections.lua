@@ -58,13 +58,19 @@ function M.content(config)
       for _, p in ipairs(config.matchup_patterns) do
          if content:find( p[1] ) and last_line:find( p[2] ) then
 
-            local ellipsis = #p[1] == 1 and '...' or ' ... '
+            local ellipsis = (#p[1] == 1) and '...' or ' ... '
 
             local comment_str = content:match('%s*'..comment_signs[1]..'.*$')
+
             if comment_str then
-               content = content:gsub( vim.pesc(comment_str),
-                  -- ellipsis..p[2]..' '..comment_str)
-                  ellipsis..p[2]..comment_str)
+               local cs = content:match('%s*'..comment_signs[1]..'%s*')
+               local comment_str_new = comment_str:gsub(
+                  vim.pesc(cs),
+                  ' '..config.fill_char:rep(#cs > 2 and #cs-2 or 1)..' ')
+
+               content = content:gsub(
+                  vim.pesc(comment_str),
+                  ellipsis..p[2]..comment_str_new)
             else
                content = content..ellipsis..p[2]
             end
