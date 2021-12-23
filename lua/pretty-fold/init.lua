@@ -9,24 +9,13 @@ local fill_char = '•'
 local default_config = {
    fill_char = fill_char,
    remove_fold_markers = true,
-
-   -- nil : Do nothing.
-   --  1  : Delete all comment signs from the line.
-   --  2  : Delete the first comment sign at the beginning of line (if any).
-   --  3  : Replace all comment signs with equal number of spaces.
-   --  4  : Replace the first comment sign at the beginning of line (if any)
-   --       with an equal number of spaces.
    comment_signs = nil,
-
-   add_close_pattern = true,
-   matchup_patterns = {
-      { '{', '}' },
-      { '%(', ')' }, -- % is for escape pattern char
-      { '%[', ']' }, -- % is for escape pattern char
-      { 'if', 'end' },
-      { 'do', 'end' },
-      { 'for', 'end' },
-   },
+         -- nil : Do nothing with comment signs.
+         --  1  : Delete all comment signs from the line.
+         --  2  : Delete the first comment sign at the beginning of line (if any).
+         --  3  : Replace all comment signs with equal number of spaces.
+         --  4  : Replace the first comment sign at the beginning of line (if any)
+         --       with an equal number of spaces.
    sections = {
       left = {
          'content',
@@ -37,7 +26,16 @@ local default_config = {
          ': ',
          'percentage', ' '
       }
-   }
+   },
+   add_close_pattern = true,
+   matchup_patterns = {
+      { '{', '}' },
+      { '%(', ')' }, -- % is for escape pattern char
+      { '%[', ']' }, -- % is for escape pattern char
+      { 'if', 'end' },
+      { 'do', 'end' },
+      { 'for', 'end' },
+   },
 }
 
 -- local default_config = { }
