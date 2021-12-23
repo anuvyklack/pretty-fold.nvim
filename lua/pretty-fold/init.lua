@@ -22,7 +22,7 @@ local default_config = {
       },
       right = {
          ' ', 'number_of_folded_lines',
-         -- ' ', string.rep(fill_char, 2), ' ',
+         -- ' ', fill_char:rep(2), ' ',
          ': ',
          'percentage', ' '
       }
