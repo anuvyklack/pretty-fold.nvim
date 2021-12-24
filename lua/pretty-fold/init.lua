@@ -3,7 +3,10 @@ local fn = vim.fn
 local sections = require('pretty-fold.service_sections')
 local M = {}
 
-local foldmethods = { 'manual', 'indent', 'expr', 'marker', 'syntax' }
+-- Labels for every vim foldmethod config table (:help foldmethod) and one
+-- general config unlabeled table (accessible with config[1]) to seek into if
+-- no value was found in foldmethod specific config table.
+local foldmethods = { 1, 'manual', 'indent', 'expr', 'marker', 'syntax' }
 
 local fill_char = '•'
 local default_config = {
@@ -14,8 +17,8 @@ local default_config = {
          --  1  : Delete all comment signs from the line.
          --  2  : Delete the first comment sign at the beginning of line (if any).
          --  3  : Replace all comment signs with equal number of spaces.
-         --  4  : Replace the first comment sign at the beginning of line (if any)
-         --       with an equal number of spaces.
+         --  4  : Replace the first comment sign at the beginning of line (if
+         --       any) with an equal number of spaces.
    sections = {
       left = {
          'content',
@@ -84,15 +87,29 @@ local function fold_text(config)
 end
 
 function M.setup(input_config)
-   local config = {}
-   for _, fdm in ipairs(foldmethods) do
-      config[fdm] = {}
-   end
+   local input_config_is_fdm_specific = false
    if input_config then
-      config = vim.tbl_deep_extend('force', config, input_config)
+      for _, v in ipairs(foldmethods) do
+         if input_config[v] then
+            input_config_is_fdm_specific = true
+            break
+         end
+      end
    end
-   for _, fdm in ipairs( vim.tbl_keys(config) ) do
-      config[fdm] = setmetatable(config[fdm], { __index = default_config })
+
+   local config = {}
+   for _, fdm in ipairs(foldmethods) do config[fdm] = {} end
+
+   if input_config_is_fdm_specific then
+      config = vim.tbl_deep_extend('force', config, input_config)
+   elseif input_config then
+      config[1] = vim.tbl_deep_extend('force', config[1], input_config)
+   end
+
+   for _, fdm in ipairs(foldmethods) do
+      config[fdm] = setmetatable(config[fdm],
+         { __index = (fdm == 1) and default_config or config[1] }
+      )
    end
 
    -- Global table with all 'foldtext' functions.
