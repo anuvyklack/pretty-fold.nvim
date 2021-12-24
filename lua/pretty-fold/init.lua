@@ -3,9 +3,9 @@ local fn = vim.fn
 local sections = require('pretty-fold.service_sections')
 local M = {}
 
-local fill_char = '•'
+local foldmethods = { 'manual', 'indent', 'expr', 'marker', 'syntax' }
 
--- local general_config = {
+local fill_char = '•'
 local default_config = {
    fill_char = fill_char,
    remove_fold_markers = true,
@@ -38,11 +38,9 @@ local default_config = {
    },
 }
 
--- local default_config = { }
-
--- local foldmethods = { 'manual', 'indent', 'expr', 'marker', 'syntax' }
-
 local function fold_text(config)
+   config = config[wo.foldmethod]
+
    local r = { left = {}, right = {} }
 
    for _, lr in ipairs({'left', 'right'}) do
@@ -85,19 +83,25 @@ local function fold_text(config)
    return result
 end
 
-function M.setup(config)
-   config = vim.tbl_deep_extend("force", default_config, config or {})
+function M.setup(input_config)
+   local config = {}
+   for _, fdm in ipairs(foldmethods) do
+      config[fdm] = {}
+   end
+   if input_config then
+      config = vim.tbl_deep_extend('force', config, input_config)
+   end
+   for _, fdm in ipairs( vim.tbl_keys(config) ) do
+      config[fdm] = setmetatable(config[fdm], { __index = default_config })
+   end
 
    -- Global table with all 'foldtext' functions.
    _G.pretty_fold = _G.pretty_fold or {}
-
    local tid = math.random(1000)
+   _G.pretty_fold['f'..tid] = function() return fold_text(config) end
 
-   _G.pretty_fold['f'..tid] = function()
-      return fold_text(config)
-   end
-
-   vim.opt.fillchars:append('fold:'..config.fill_char)
+   -- vim.opt.fillchars:append('fold:'..config.fill_char)
+   vim.opt.fillchars:append('fold: ')
    vim.opt.foldtext = 'v:lua._G.pretty_fold.f'..tid..'()'
 
    -- _G.pretty_fold.config = _G.pretty_fold.config or {}
