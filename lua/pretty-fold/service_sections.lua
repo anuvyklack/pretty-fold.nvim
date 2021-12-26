@@ -16,6 +16,7 @@ function M.content(config)
    for i, p in ipairs(comment_signs) do
       comment_signs[i] = vim.pesc(p)
    end
+   if vim.tbl_isempty(comment_signs) then table.insert(comment_signs, '') end
 
    do -- Remove all fold markers from string.
    -- if config.remove_fold_markers then
