@@ -1,6 +1,5 @@
 local wo = vim.wo
 local fn = vim.fn
-local sections = require('pretty-fold.service_sections')
 local M = {}
 
 -- Labels for every vim foldmethod config table (:help foldmethod) and one
@@ -46,9 +45,10 @@ local function fold_text(config)
 
    local r = { left = {}, right = {} }
 
+   -- Get the text of all sections of the fold string.
    for _, lr in ipairs({'left', 'right'}) do
       for _, s in ipairs(config.sections[lr] or {}) do
-         local sec = sections[s]
+         local sec = require('pretty-fold.service_sections')[s]
          if vim.is_callable(sec) then
             table.insert(r[lr], sec(config))
          else
