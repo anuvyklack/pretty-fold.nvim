@@ -63,17 +63,39 @@ local function fold_text(config)
       -- The width of the number, fold and sign columns.
       local num_col_width = math.max( fn.strlen(fn.line('$')), wo.numberwidth )
       local fold_col_width = wo.foldcolumn:match('%d+$') or 3
-      local sign_col_width = wo.signcolumn:match('%d+$') * 2 or 6
+
+      -- Calculate the width of the signs column.
+      local sign_col_width = 0
+      local signcolumn = wo.signcolumn
+      if signcolumn:match('^auto') or
+         (signcolumn:match('^number') and not wo.number)
+      then
+         -- Calculate the maximum number of signes placed on any line
+         -- in current buffer.
+         local signs = vim.fn.sign_getplaced('%', { group = '*' })[1].signs
+         local spl = {}  -- signs per line
+         for _, sign in ipairs(signs) do
+            spl[sign.lnum] = (spl[sign.lnum] or 0) + 1
+         end
+         local max_spl = math.max( unpack(vim.tbl_values(spl)) or 0 )
+
+         signcolumn = signcolumn:match('%d+$') or math.huge
+         sign_col_width = math.min(signcolumn, max_spl)
+      elseif signcolumn:match('^yes') then
+         sign_col_width = signcolumn:match('%d+$') or 1
+      end
+      sign_col_width = sign_col_width * 2
+
 
       local visible_win_width =
-         vim.api.nvim_win_get_width(0) - num_col_width - fold_col_width - sign_col_width
+         vim.api.nvim_win_get_width(0) - num_col_width - fold_col_width - sign_col_width + 1
 
       local lnum = 0
       for _, str in ipairs( vim.tbl_flatten( vim.tbl_values(r) ) ) do
          -- lnum = lnum + #str
          lnum = lnum + fn.strdisplaywidth(str)
       end
-      r.expansion_str = string.rep(config.fill_char, visible_win_width - lnum - 4)
+      r.expansion_str = string.rep(config.fill_char, visible_win_width - lnum)
    else
       r.expansion_str = ''
    end
