@@ -61,7 +61,7 @@ local function fold_text(config)
       not vim.tbl_isempty(config.sections.right)
    then
       -- The width of the number, fold and sign columns.
-      local num_col_width = math.min( fn.strlen(fn.line('$')), wo.numberwidth )
+      local num_col_width = math.max( fn.strlen(fn.line('$')), wo.numberwidth )
       local fold_col_width = wo.foldcolumn:match('%d+$') or 3
       local sign_col_width = wo.signcolumn:match('%d+$') * 2 or 6
 
