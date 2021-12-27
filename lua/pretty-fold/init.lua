@@ -111,7 +111,7 @@ local function fold_text(config)
    return result
 end
 
-function M.setup(input_config)
+function M.configure_fold_text(input_config)
    local input_config_is_fdm_specific = false
    if input_config then
       for _, v in ipairs(foldmethods) do
@@ -139,19 +139,32 @@ function M.setup(input_config)
 
    -- Global table with all 'foldtext' functions.
    _G.pretty_fold = _G.pretty_fold or {}
-   local tid = math.random(1000)
-   _G.pretty_fold['f'..tid] = function() return fold_text(config) end
-
-   vim.opt.foldtext = 'v:lua._G.pretty_fold.f'..tid..'()'
 
    -- _G.pretty_fold.config = _G.pretty_fold.config or {}
    -- _G.pretty_fold.config[tid] = config
+
+   return config
 end
 
+function M.setup(config)
+   config = M.configure_fold_text(config)
 
--- function M.local_setup(config)
---    vim.opt_local.fillchars:append('fold:'..config.fill_char)
---    vim.opt_local.foldtext = 'v:lua.pretty_fold_text()'
--- end
+   _G.pretty_fold.global = function() return fold_text(config) end
+
+   vim.opt.foldtext = 'v:lua._G.pretty_fold.global()'
+
+   -- local fid = 'f'..math.random(1000)  -- function ID
+   -- _G.pretty_fold[fid] = function() return fold_text(config) end
+   --
+   -- vim.opt.foldtext = 'v:lua._G.pretty_fold.'..fid..'()'
+end
+
+function M.local_setup(filetype, config)
+   if not _G.pretty_fold[filetype] then
+      config = M.configure_fold_text(config)
+      _G.pretty_fold[filetype] = function() return fold_text(config) end
+      vim.opt_local.foldtext = 'v:lua._G.pretty_fold.'..filetype..'()'
+   end
+end
 
 return M
