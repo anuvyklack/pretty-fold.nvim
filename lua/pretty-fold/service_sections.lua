@@ -71,9 +71,11 @@ function M.content(config)
 
                content = content:gsub(
                   vim.pesc(comment_str),
-                  ellipsis..p[2]..comment_str_new)
+                  ellipsis..last_line..comment_str_new)
+                  -- ellipsis..p[2]..comment_str_new)
             else
-               content = content..ellipsis..p[2]
+               content = content..ellipsis..last_line
+               -- content = content..ellipsis..p[2]
             end
 
             break
