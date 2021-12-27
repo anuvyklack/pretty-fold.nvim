@@ -7,9 +7,8 @@ local M = {}
 -- no value was found in foldmethod specific config table.
 local foldmethods = { 1, 'manual', 'indent', 'expr', 'marker', 'syntax' }
 
-local fill_char = '•'
 local default_config = {
-   fill_char = fill_char,
+   fill_char = '•',
    remove_fold_markers = true,
    foldcolumn = 3,
          -- We can't calculate precisely the current foldcolumn width so we take
@@ -27,10 +26,8 @@ local default_config = {
          'content',
       },
       right = {
-         ' ', 'number_of_folded_lines',
-         -- ' ', fill_char:rep(2), ' ',
-         ': ',
-         'percentage', ' '
+         ' ', 'number_of_folded_lines', ': ', 'percentage', ' ',
+         function(config) return config.fill_char:rep(3) end
       }
    },
    add_close_pattern = true,

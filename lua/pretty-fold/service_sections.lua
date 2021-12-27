@@ -111,13 +111,8 @@ function M.percentage()
    return (pnum < 10 and ' ' or '') .. pnum .. '%'
 end
 
-local function unknown_section(_, custom_section)
-   -- return custom_section
-   if vim.is_callable(custom_section) then
-      return custom_section()
-   else
+return setmetatable(M, {
+   __index = function(_, custom_section)
       return custom_section
    end
-end
-
-return setmetatable(M, { __index = unknown_section })
+})
