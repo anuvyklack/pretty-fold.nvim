@@ -15,16 +15,23 @@ function M.content(config)
    ---The content of the 'content' section.
    ---@type string
    local content = fn.getline(line_num)
-   local indent_num = fn.indent(line_num)
 
    ---The list of comment characters for the current buffer, where all Lua magic
    ---characters are escaped.
    ---@type string[]
    local comment_signs = fn.split(bo.commentstring, '%s')
-   for i, p in ipairs(comment_signs) do
-      comment_signs[i] = vim.pesc(p)
+   ---List with comment signs lengths.
+   ---@type number[]
+   local comment_signs_len = {}
+   if vim.tbl_isempty(comment_signs) then
+      comment_signs[1] = ''
+      comment_signs_len[1] = 0
+   else
+      for i, p in ipairs(comment_signs) do
+         comment_signs[i] = vim.pesc(p)
+         comment_signs_len[i] = fn.strdisplaywidth(p)
+      end
    end
-   if vim.tbl_isempty(comment_signs) then table.insert(comment_signs, '') end
 
    -- Remove all fold markers from string.
    if config.remove_fold_markers then
@@ -44,18 +51,31 @@ function M.content(config)
       line_num = fn.nextnonblank(v.foldstart + 1)
       if line_num ~= 0 and line_num <= v.foldend then
          content = fn.getline(line_num)
-         indent_num = fn.indent(line_num)
       end
    end
 
-   if config.sections.left[1] == 'content' then
-      if indent_num > 1 then
-         -- Replace indentation with 'fill_char's.
-         content = content:gsub('^%s+',
-            string.rep(config.fill_char, indent_num - 1)..' ')
+   if config.comment_signs then
+      for i, sign in ipairs(comment_signs) do
+         content = content:gsub(sign,
+            (config.comment_signs == 'spaces' and string.rep(' ', comment_signs_len[i]))
+            or
+            (config.comment_signs == 'delete' and '')
+         )
       end
+   end
+
+   if config.sections.left[1] == 'content' and config.keep_indentation then
+      local opening_blank_substr = content:match('^%s%s+')
+      if opening_blank_substr then
+         content = content:gsub(
+            opening_blank_substr,
+            config.fill_char:rep(#opening_blank_substr - 1)..' ',
+            1)
+      end
+   elseif config.sections.left[1] == 'content' then
+      content = content:gsub('^%s*', '') -- Strip all indentation.
    else
-      content = content:gsub('^%s*', ' ')  -- Strip all indentation.
+      content = content:gsub('^%s*', ' ')
    end
 
    content = content:gsub('%s*$', '')
