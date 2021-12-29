@@ -70,7 +70,8 @@ local function fold_text(config)
    end
 
    -- Calculate widths of the number column.
-   local num_col_width = math.max( fn.strlen(fn.line('$')), wo.numberwidth )
+   local num_col_width = math.max( #tostring(api.nvim_buf_line_count(0)),
+                                   wo.numberwidth )
 
    -- We can't calculate precisely the current foldcolumn width.
    -- So we assume it has the maximum value taken from 'foldcolumn' option ...
