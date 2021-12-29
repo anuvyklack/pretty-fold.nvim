@@ -26,10 +26,10 @@ function M.content(config)
    end
    if vim.tbl_isempty(comment_signs) then table.insert(comment_signs, '') end
 
-   do -- Remove all fold markers from string.
-   -- if config.remove_fold_markers then
+   -- Remove all fold markers from string.
+   if config.remove_fold_markers then
       for _, fdm in ipairs( opt.foldmarker:get() ) do
-         content = content:gsub(fdm..'%d*', '')
+         content = content:gsub(vim.pesc(fdm)..'%d*', '')
       end
 
       -- Remove all comment signs from the end of the string.
