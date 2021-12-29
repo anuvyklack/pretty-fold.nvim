@@ -6,12 +6,20 @@ local M = {}
 
 -- config.match_the_close_pattern
 
----@return string content the content of the first nonblank line of the folding region
+---@return string content modified first nonblank line of the folded region
 function M.content(config)
+   ---The number of the line from which produces content for the fold string:
+   ---first non-blank line.
+   ---@type number
    local line_num = v.foldstart
+   ---The content of the 'content' section.
+   ---@type string
    local content = fn.getline(line_num)
    local indent_num = fn.indent(line_num)
 
+   ---The list of comment characters for the current buffer, where all Lua magic
+   ---characters are escaped.
+   ---@type string[]
    local comment_signs = fn.split(bo.commentstring, '%s')
    for i, p in ipairs(comment_signs) do
       comment_signs[i] = vim.pesc(p)
@@ -90,7 +98,7 @@ function M.content(config)
 
    -- Exchange all occurrences of multiple spaces inside the text with
    -- 'fill_char', like this:
-   --    "//      Text"  ->  "// ==== Text"
+   -- "//      Text"  ->  "// ==== Text"
    for blank_substr in content:gmatch( '%s%s%s+' ) do
       content = content:gsub(
          blank_substr,
@@ -101,10 +109,12 @@ function M.content(config)
    return content
 end
 
+---@return string
 function M.number_of_folded_lines()
    return (v.foldend - v.foldstart + 1)..' lines'
 end
 
+---@return string
 function M.percentage()
    local fold_size = v.foldend - v.foldstart + 1  -- The number of folded lines.
    local pnum = math.floor(100 * fold_size / vim.api.nvim_buf_line_count(0))

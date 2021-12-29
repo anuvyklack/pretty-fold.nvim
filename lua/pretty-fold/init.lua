@@ -1,5 +1,6 @@
 local wo = vim.wo
 local fn = vim.fn
+local api = vim.api
 local M = {}
 
 -- Labels for every vim foldmethod config table (:help foldmethod) and one
@@ -10,17 +11,23 @@ local foldmethods = { 1, 'manual', 'indent', 'expr', 'marker', 'syntax' }
 local default_config = {
    fill_char = '•',
    remove_fold_markers = true,
+
+   -- Keep the indentation of the content of the fold string.
+   keep_indentation = true,
+
+   -- Possible values:
+   -- "delete" : Delete all comment signs from the fold string.
+   -- "spaces" : Replace all comment signs with equal number of spaces.
+   --   false  : Do nothing with comment signs.
+   ---@type string|boolean
+   comment_signs = 'spaces',
+
+   -- We can't calculate precisely the current foldcolumn width so we
+   -- take its maximum value from 'foldcolumn' option.  But if it is
+   -- set to 'auto' we have no digit to use. This value will be use in
+   -- this case.
    foldcolumn = 3,
-         -- We can't calculate precisely the current foldcolumn width so we take
-         -- its maximum value from 'foldcolumn' option.  But if it is set to
-         -- 'auto' we have no digit to use. This value will be use in this case.
-   comment_signs = nil,
-         -- nil : Do nothing with comment signs.
-         --  1  : Delete all comment signs from the line.
-         --  2  : Delete the first comment sign at the beginning of line (if any).
-         --  3  : Replace all comment signs with equal number of spaces.
-         --  4  : Replace the first comment sign at the beginning of line (if
-         --       any) with an equal number of spaces.
+
    sections = {
       left = {
          'content',
@@ -30,17 +37,21 @@ local default_config = {
          function(config) return config.fill_char:rep(3) end
       }
    },
+
    add_close_pattern = true,
    matchup_patterns = {
       { '{', '}' },
-      { '%(', ')' }, -- % is for escape pattern char
-      { '%[', ']' }, -- % is for escape pattern char
+      { '%(', ')' }, -- % to escape lua pattern char
+      { '%[', ']' }, -- % to escape lua pattern char
       { 'if', 'end' },
       { 'do', 'end' },
       { 'for', 'end' },
    },
 }
 
+-- The main function which produses the string which will be shown
+-- in the fold line.
+---@param config table
 local function fold_text(config)
    config = config[wo.foldmethod]
 
@@ -88,7 +99,7 @@ local function fold_text(config)
    sign_col_width = sign_col_width * 2
 
    local visible_win_width =
-      vim.api.nvim_win_get_width(0) - num_col_width - fold_col_width - sign_col_width
+      api.nvim_win_get_width(0) - num_col_width - fold_col_width - sign_col_width
 
    -- Calculate the summation length of all the sections of the fold text string.
    local fold_text_len = 0
@@ -146,6 +157,8 @@ function M.configure_fold_text(input_config)
    return config
 end
 
+-- Setup the global 'foldtext' vim option.
+---@param config table
 function M.setup(config)
    config = M.configure_fold_text(config)
 
@@ -159,6 +172,9 @@ function M.setup(config)
    -- vim.opt.foldtext = 'v:lua._G.pretty_fold.'..fid..'()'
 end
 
+-- Setup the filetype specific window local 'foldtext' vim option.
+---@param filetype string
+---@param config table
 function M.local_setup(filetype, config)
    if not _G.pretty_fold[filetype] then
       config = M.configure_fold_text(config)
