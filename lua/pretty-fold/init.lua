@@ -1,3 +1,4 @@
+local ffi = require("ffi")
 local wo = vim.wo
 local fn = vim.fn
 local api = vim.api
@@ -21,12 +22,6 @@ local default_config = {
    --   false  : Do nothing with comment signs.
    ---@type string|boolean
    comment_signs = 'spaces',
-
-   -- We can't calculate precisely the current foldcolumn width so we
-   -- take its maximum value from 'foldcolumn' option.  But if it is
-   -- set to 'auto' we have no digit to use. This value will be use in
-   -- this case.
-   foldcolumn = 3,
 
    sections = {
       left = {
@@ -69,38 +64,12 @@ local function fold_text(config)
       end
    end
 
-   -- Calculate widths of the number column.
-   local num_col_width = math.max( #tostring(api.nvim_buf_line_count(0)),
-                                   wo.numberwidth )
+   ---The offset of a window, occupied by line number column,
+   ---fold column and sign column.
+   ---@type number
+   local gutter_width = ffi.C.curwin_col_off()
 
-   -- We can't calculate precisely the current foldcolumn width.
-   -- So we assume it has the maximum value taken from 'foldcolumn' option ...
-   local fold_col_width = wo.foldcolumn:match('%d+$') or config.foldcolumn
-
-   -- Calculate width of the signs column.
-   local sign_col_width = 0
-   local signcolumn = wo.signcolumn
-   if signcolumn:match('^auto') or
-      (signcolumn:match('^number') and not wo.number)
-   then
-      -- Calculate the maximum number of signes placed on any line
-      -- in current buffer.
-      local signs = vim.fn.sign_getplaced('%', { group = '*' })[1].signs
-      local spl = {}  -- signs per line
-      for _, sign in ipairs(signs) do
-         spl[sign.lnum] = (spl[sign.lnum] or 0) + 1
-      end
-      local max_spl = math.max( unpack(vim.tbl_values(spl)) or 0 )
-
-      signcolumn = signcolumn:match('%d+$') or math.huge
-      sign_col_width = math.min(signcolumn, max_spl)
-   elseif signcolumn:match('^yes') then
-      sign_col_width = signcolumn:match('%d+$') or 1
-   end
-   sign_col_width = sign_col_width * 2
-
-   local visible_win_width =
-      api.nvim_win_get_width(0) - num_col_width - fold_col_width - sign_col_width
+   local visible_win_width = api.nvim_win_get_width(0) - gutter_width
 
    -- Calculate the summation length of all the sections of the fold text string.
    local fold_text_len = 0
@@ -110,15 +79,10 @@ local function fold_text(config)
 
    r.expansion_str = string.rep(config.fill_char, visible_win_width - fold_text_len)
 
-   -- ... but real foldcolumn doesn't always have its maximum value, so we need
-   -- to close the gap between right section and the boder of the window.
-   r.end_str = string.rep(config.fill_char, fold_col_width-1)
-
    local result = ''
    for _, str in ipairs(r.left)  do result = result .. str end
    result = result .. r.expansion_str
    for _, str in ipairs(r.right) do result = result .. str end
-   result = result .. r.end_str
 
    return result
 end
