@@ -38,9 +38,9 @@ local default_config = {
       { '{', '}' },
       { '%(', ')' }, -- % to escape lua pattern char
       { '%[', ']' }, -- % to escape lua pattern char
-      { '^if', 'end' },
-      { '^do', 'end' },
-      { '^for', 'end' },
+      { 'if%s', 'end' },
+      { 'do%s', 'end' },
+      { 'for%s', 'end' },
    },
 }
 
