@@ -4,8 +4,6 @@ local opt = vim.opt
 local fn = vim.fn
 local M = {}
 
--- config.match_the_close_pattern
-
 ---@return string content modified first nonblank line of the folded region
 function M.content(config)
    ---The number of the line from which produces content for the fold string:
@@ -131,7 +129,7 @@ end
 
 ---@return string
 function M.number_of_folded_lines()
-   return (v.foldend - v.foldstart + 1)..' lines'
+   return string.format('%d lines', v.foldend - v.foldstart + 1)
 end
 
 ---@return string
