@@ -54,32 +54,6 @@ function M.content(config)
       end
    end
 
-   if config.comment_signs then
-      for i, sign in ipairs(comment_signs) do
-         content = content:gsub(sign,
-            (config.comment_signs == 'spaces' and string.rep(' ', comment_signs_len[i]))
-            or
-            (config.comment_signs == 'delete' and '')
-         )
-      end
-   end
-
-   if config.sections.left[1] == 'content' and config.keep_indentation then
-      local opening_blank_substr = content:match('^%s%s+')
-      if opening_blank_substr then
-         content = content:gsub(
-            opening_blank_substr,
-            config.fill_char:rep(#opening_blank_substr - 1)..' ',
-            1)
-      end
-   elseif config.sections.left[1] == 'content' then
-      content = content:gsub('^%s*', '') -- Strip all indentation.
-   else
-      content = content:gsub('^%s*', ' ')
-   end
-
-   content = content:gsub('%s*$', '')
-
    if config.add_close_pattern then  -- Add matchup pattern
       local last_line = fn.getline(v.foldend)
       last_line = last_line:gsub(comment_signs[1]..'.*$', '')
@@ -110,6 +84,32 @@ function M.content(config)
          end
       end
    end
+
+   if config.comment_signs then
+      for i, sign in ipairs(comment_signs) do
+         content = content:gsub(sign,
+            (config.comment_signs == 'spaces' and string.rep(' ', comment_signs_len[i]))
+            or
+            (config.comment_signs == 'delete' and '')
+         )
+      end
+   end
+
+   if config.sections.left[1] == 'content' and config.keep_indentation then
+      local opening_blank_substr = content:match('^%s%s+')
+      if opening_blank_substr then
+         content = content:gsub(
+            opening_blank_substr,
+            config.fill_char:rep(#opening_blank_substr - 1)..' ',
+            1)
+      end
+   elseif config.sections.left[1] == 'content' then
+      content = content:gsub('^%s*', '') -- Strip all indentation.
+   else
+      content = content:gsub('^%s*', ' ')
+   end
+
+   content = content:gsub('%s*$', '')
 
    content = content..' '
 
