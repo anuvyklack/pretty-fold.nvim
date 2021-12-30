@@ -55,36 +55,24 @@ local function fold_text(config)
    -- Get the text of all sections of the fold string.
    for _, lr in ipairs({'left', 'right'}) do
       for _, s in ipairs(config.sections[lr] or {}) do
-         local sec = require('pretty-fold.service_sections')[s]
-         if vim.is_callable(sec) then
-            table.insert(r[lr], sec(config))
-         else
-            table.insert(r[lr], sec)
-         end
+         local sec = require('pretty-fold.sections')[s]
+         table.insert(r[lr], vim.is_callable(sec) and sec(config) or sec)
       end
    end
 
-   ---The offset of a window, occupied by line number column,
+   ---The width of offset of a window, occupied by line number column,
    ---fold column and sign column.
    ---@type number
    local gutter_width = ffi.C.curwin_col_off()
 
    local visible_win_width = api.nvim_win_get_width(0) - gutter_width
 
-   -- Calculate the summation length of all the sections of the fold text string.
-   local fold_text_len = 0
-   for _, str in ipairs( vim.tbl_flatten( vim.tbl_values(r) ) ) do
-      fold_text_len = fold_text_len + fn.strdisplaywidth(str)
-   end
+   -- The summation length of all sections of the fold text string.
+   local fold_text_len = fn.strdisplaywidth( table.concat( vim.tbl_flatten( vim.tbl_values(r) )))
 
    r.expansion_str = string.rep(config.fill_char, visible_win_width - fold_text_len)
 
-   local result = ''
-   for _, str in ipairs(r.left)  do result = result .. str end
-   result = result .. r.expansion_str
-   for _, str in ipairs(r.right) do result = result .. str end
-
-   return result
+   return table.concat( vim.tbl_flatten({r.left, r.expansion_str, r.right}) )
 end
 
 function M.configure_fold_text(input_config)
