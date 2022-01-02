@@ -2,7 +2,11 @@ local ffi = require("ffi")
 local wo = vim.wo
 local fn = vim.fn
 local api = vim.api
-local M = {}
+
+local M = {
+   ---Table with all 'foldtext' functions.
+   foldtext = {}
+}
 
 -- Labels for every vim foldmethod config table (:help foldmethod) and one
 -- general config unlabeled table (accessible with config[1]) to seek into if
@@ -75,7 +79,7 @@ local function fold_text(config)
    return table.concat( vim.tbl_flatten({r.left, r.expansion_str, r.right}) )
 end
 
-function M.configure_fold_text(input_config)
+local function configure_fold_text(input_config)
    local input_config_is_fdm_specific = false
    if input_config then
       for _, v in ipairs(foldmethods) do
@@ -97,15 +101,8 @@ function M.configure_fold_text(input_config)
 
    for _, fdm in ipairs(foldmethods) do
       config[fdm] = setmetatable(config[fdm],
-         { __index = (fdm == 1) and default_config or config[1] }
-      )
+         { __index = (fdm == 1) and default_config or config[1] })
    end
-
-   -- Global table with all 'foldtext' functions.
-   _G.pretty_fold = _G.pretty_fold or {}
-
-   -- _G.pretty_fold.config = _G.pretty_fold.config or {}
-   -- _G.pretty_fold.config[tid] = config
 
    return config
 end
@@ -113,27 +110,21 @@ end
 -- Setup the global 'foldtext' vim option.
 ---@param config table
 function M.setup(config)
-   config = M.configure_fold_text(config)
-
-   _G.pretty_fold.global = function() return fold_text(config) end
-
-   vim.opt.foldtext = 'v:lua._G.pretty_fold.global()'
-
-   -- local fid = 'f'..math.random(1000)  -- function ID
-   -- _G.pretty_fold[fid] = function() return fold_text(config) end
-   --
-   -- vim.opt.foldtext = 'v:lua._G.pretty_fold.'..fid..'()'
+   config = configure_fold_text(config)
+   M.foldtext.global = function() return fold_text(config) end
+   vim.opt.foldtext = 'v:lua.require("pretty-fold").foldtext.global()'
 end
 
 -- Setup the filetype specific window local 'foldtext' vim option.
 ---@param filetype string
 ---@param config table
 function M.ft_setup(filetype, config)
-   if not _G.pretty_fold[filetype] then
-      config = M.configure_fold_text(config)
-      _G.pretty_fold[filetype] = function() return fold_text(config) end
+   if not M.foldtext[filetype] then
+      config = configure_fold_text(config)
+      M.foldtext[filetype] = function() return fold_text(config) end
    end
-   vim.opt_local.foldtext = 'v:lua._G.pretty_fold.'..filetype..'()'
+   vim.opt_local.foldtext =
+      string.format('v:lua.require("pretty-fold").foldtext.%s()', filetype)
 end
 
 return M
