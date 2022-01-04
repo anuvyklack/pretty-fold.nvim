@@ -72,7 +72,8 @@ function M.show_preview()
          fold_start - 1,
          indent,
       },
-      row = 0, col = 0, -- The position of the window relative to 'bufos' field.
+      border = {' ', '', ' ', ' ', ' ', ' ', ' ', ' '},
+      row = 0, col = -1, -- The position of the window relative to 'bufos' field.
       width = max_line_len < room_right and max_line_len or room_right,
       height = fold_size < room_below and fold_size or room_below,
       style = 'minimal',
