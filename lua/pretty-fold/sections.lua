@@ -52,6 +52,12 @@ function M.content(config)
       end
    end
 
+   if not vim.tbl_isempty(config.stop_words) then
+      for _, w in ipairs(config.stop_words) do
+         content = content:gsub(w, '')
+      end
+   end
+
    if config.add_close_pattern then  -- Add matchup pattern
       local last_line = fn.getline(v.foldend)
       last_line = last_line:gsub(comment_signs[1]..'.*$', '')
@@ -108,7 +114,6 @@ function M.content(config)
    end
 
    content = content:gsub('%s*$', '')
-
    content = content..' '
 
    -- Replace all tabs with spaces with respect to %tabstop.

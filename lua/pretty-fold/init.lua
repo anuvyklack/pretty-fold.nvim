@@ -23,9 +23,14 @@ local default_config = {
    -- Possible values:
    -- "delete" : Delete all comment signs from the fold string.
    -- "spaces" : Replace all comment signs with equal number of spaces.
-   --   false  : Do nothing with comment signs.
+   --  false   : Do nothing with comment signs.
    ---@type string|boolean
    comment_signs = 'spaces',
+
+   -- List of patterns that will be removed from content foldtext section.
+   stop_words = {
+      '@brief%s*', -- (for cpp) Remove '@brief' and all spaces after.
+   },
 
    sections = {
       left = {
