@@ -47,7 +47,6 @@ function M.show_preview()
       local line_len = fn.strdisplaywidth(line)
       if line_len > max_line_len then max_line_len = line_len end
    end
-   max_line_len = max_line_len + 1
 
    local bufnr = api.nvim_create_buf(false, true)
    -- local bufnr = api.nvim_create_buf(true, true)
@@ -74,7 +73,7 @@ function M.show_preview()
       },
       border = {' ', '', ' ', ' ', ' ', ' ', ' ', ' '},
       row = 0, col = -1, -- The position of the window relative to 'bufos' field.
-      width = max_line_len < room_right and max_line_len or room_right,
+      width = max_line_len + 2 < room_right and max_line_len + 1 or room_right - 1,
       height = fold_size < room_below and fold_size or room_below,
       style = 'minimal',
       focusable = false,
