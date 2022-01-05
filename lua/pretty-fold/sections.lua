@@ -70,18 +70,21 @@ function M.content(config)
             local comment_str = content:match('%s*'..comment_signs[1]..'.*$')
 
             if comment_str then
-               local cs = content:match('%s*'..comment_signs[1]..'%s*')
-               local comment_str_new = comment_str:gsub(
-                  vim.pesc(cs),
-                  ' '..config.fill_char:rep(#cs > 2 and #cs-2 or 1)..' ')
+               -- local cs = content:match('%s*'..comment_signs[1]..'%s*')
+               -- local comment_str_new = comment_str:gsub(
+               --    vim.pesc(cs),
+               --    table.concat{' ', config.fill_char:rep(#cs > 2 and #cs-2 or 1), ' '}
+               -- )
 
                content = content:gsub(
                   vim.pesc(comment_str),
-                  ellipsis..last_line..comment_str_new)
-                  -- ellipsis..p[2]..comment_str_new)
+                  table.concat{ ellipsis, last_line, comment_str }
+                  -- table.concat{ ellipsis, last_line, comment_str_new }
+                  -- table.concat{ ellipsis, p[2], comment_str_new }
+               )
             else
-               content = content..ellipsis..last_line
-               -- content = content..ellipsis..p[2]
+               content = table.concat{ content, ellipsis, last_line }
+               -- content = table.concat{ content, ellipsis, p[2] }
             end
 
             break
