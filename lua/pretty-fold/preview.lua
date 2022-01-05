@@ -8,7 +8,7 @@ local M = {}
 _G.pretty_fold_preview = {}
 
 ---Open popup window with folded text preview. Also set autocommands to close
----popup window and change its size on scrolling and vim resing.
+---popup window and change its size on scrolling and vim resizing.
 function M.show_preview()
    ---Current buffer ID
    ---@type number
@@ -129,7 +129,7 @@ function M.keymap_open_close(key)
       api.nvim_command('normal! zv')
       local bufnr = api.nvim_get_current_buf()
       if _G.pretty_fold_preview[bufnr] then
-         -- For smoothnes
+         -- For smoothness to avoid annoying screen flickering.
          fn.timer_start(1, _G.pretty_fold_preview[bufnr].close)
       end
    else
@@ -142,7 +142,7 @@ function M.keymap_close(key)
       api.nvim_command('normal! zv')
       local bufnr = api.nvim_get_current_buf()
       if _G.pretty_fold_preview[bufnr] then
-         -- For smoothnes
+         -- For smoothness to avoid annoying screen flickering.
          fn.timer_start(1, _G.pretty_fold_preview[bufnr].close)
       end
    elseif fn.foldclosed('.') ~= -1 then
