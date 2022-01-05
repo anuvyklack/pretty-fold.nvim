@@ -102,7 +102,7 @@ function M.content(config)
       end
    end
 
-   if config.sections.left[1] == 'content' and config.keep_indentation then
+   if config.keep_indentation then
       local opening_blank_substr = content:match('^%s%s+')
       if opening_blank_substr then
          content = content:gsub(
