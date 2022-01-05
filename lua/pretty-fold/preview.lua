@@ -17,6 +17,8 @@ function M.show_preview()
    _G.pretty_fold_preview[curbufnr] = {}
 
    local fold_start = fn.foldclosed('.') -- '.' is the current line
+   if fold_start == -1 then return end
+
    local fold_end = fn.foldclosedend('.')
 
    ---The number of folded lines.
