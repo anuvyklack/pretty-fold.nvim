@@ -158,7 +158,7 @@ end
 ---@param key?
 ---| '"h"'
 ---| '"l"'
-function M.default_keybinding(key)
+function M.setup_keybinding(key)
    key = key or 'h'
    assert(key == 'h' or key == 'l', "Only 'h' or 'l' keys are supported!")
    local second_key = key == 'h' and 'l' or 'h'
