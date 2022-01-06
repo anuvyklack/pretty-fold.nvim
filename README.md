@@ -172,7 +172,7 @@ require('pretty-fold').setup{
 
 ### Setup for particular filetype
 
-This plugin provides to setup functions.
+This plugin provides two setup functions.
 
 The first one
 ```lua
@@ -245,7 +245,7 @@ buffer leaving.
 To enable this feature call
 
 ```lua
-require('pretty-fold.preview').setup_keybinding('h') --  choose'h' or 'l' key
+require('pretty-fold.preview').setup_keybinding('h') -- choose 'h' or 'l' key
 ```
 
 **Warning:** Only `h` or `l` keys can be passed to this function, any other will cause an error.
