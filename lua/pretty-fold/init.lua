@@ -3,6 +3,8 @@ local wo = vim.wo
 local fn = vim.fn
 local api = vim.api
 
+ffi.cdef'int curwin_col_off(void);'
+
 local M = {
    ---Table with all 'foldtext' functions.
    foldtext = {}
