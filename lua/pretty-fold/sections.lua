@@ -102,12 +102,16 @@ function M.content(config)
       end
    end
 
+   -- Replace all tabs with spaces with respect to %tabstop.
+   content = content:gsub('\t', string.rep(' ', bo.tabstop))
+
    if config.keep_indentation then
       local opening_blank_substr = content:match('^%s%s+')
       if opening_blank_substr then
          content = content:gsub(
             opening_blank_substr,
             config.fill_char:rep(#opening_blank_substr - 1)..' ',
+            -- config.fill_char:rep(fn.strdisplaywidth(opening_blank_substr) - 1)..' ',
             1)
       end
    elseif config.sections.left[1] == 'content' then
@@ -118,9 +122,6 @@ function M.content(config)
 
    content = content:gsub('%s*$', '')
    content = content..' '
-
-   -- Replace all tabs with spaces with respect to %tabstop.
-   content = content:gsub('\t', string.rep(' ', bo.tabstop))
 
    -- Exchange all occurrences of multiple spaces inside the text with
    -- 'fill_char', like this:
