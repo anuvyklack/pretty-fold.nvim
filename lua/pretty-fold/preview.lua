@@ -164,11 +164,8 @@ function M.setup_keybinding(key)
    local second_key = key == 'h' and 'l' or 'h'
 
    g.fold_preview_cocked = true
-   vim.cmd(string.format([[
-      nnoremap %s <cmd>lua require('pretty-fold.preview').keymap_open_close('%s')<cr>
-      nnoremap %s <cmd>lua require('pretty-fold.preview').keymap_close('%s')<cr>
-      ]], key, key, second_key, second_key
-   ))
+   vim.keymap.set('n', key,        function() M.keymap_open_close(key)   end)
+   vim.keymap.set('n', second_key, function() M.keymap_close(second_key) end)
 end
 
 return M
