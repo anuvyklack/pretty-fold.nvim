@@ -9,7 +9,7 @@ https://user-images.githubusercontent.com/13056013/148261501-56677c8f-24a7-4c45-
 
 ## Instalation and quickstart
 
-Instalation and setup expample with [packer](https://github.com/wbthomason/packer.nvim):
+Installation and setup example with [packer](https://github.com/wbthomason/packer.nvim):
 
 ```lua
 use{ 'anuvyklack/pretty-fold.nvim',
@@ -69,7 +69,7 @@ pretty-fold.nvim comes with the following defaults:
 
 The main part. Contains two tables: `config.sections.left` and
 `config.sections.right` which content will be left and right aligned
-respectively. Each of them can contains [service sections](#service-sections),
+respectively. Each of them can contain [service sections](#service-sections),
 strings and functions that return string. All functions accept config table as
 an argument.
 
@@ -97,7 +97,7 @@ Keep the indentation of the content of the fold string.
 
 ### `comment_signs`
 
-What to do with commnet signs.
+What to do with comment signs.
 
 | Option     | Description |
 | ---------- | ----------- |
@@ -180,16 +180,16 @@ require('pretty-fold').setup(config: table)
 ```
 sets global `foldtext` option.
 
-But if you want to setup filetype specific `foldext` use the secons one
+But if you want to setup filetype specific `foldext` use the second one
 
 ```lua
 require('pretty-fold').ft_setup(filtype: string, config: table)
 ```
 
-This function should be called for every buffer of the desired filtype, but
-this plugin doesn't provides any autocommands to do this because Neovim (and
-Vim) has much more convinient mechanist to do this: **`after/ftplugin` directory**.
-To setup foldext with pretty-fold.nvim plugin only for, for expample, C++ files
+This function should be called for every buffer of the desired filetype, but
+this plugin doesn't provide any autocommands to do this because Neovim (and
+Vim) has a much more convenient mechanism to do this: **`after/ftplugin` directory**.
+To setup foldtext with pretty-fold.nvim plugin only for, for example, C++ files
 add to the file (on Linux)
 
 ```sh
@@ -216,7 +216,7 @@ the key named after foldmethod.
 
 It is allowed to have one unlabeled global config table for all foldmethods and
 tune only desired options in foldmethod specific config table. All options that
-doesn't have value in foldmethod config table will be taken from global config
+don't have value in foldmethod config table will be taken from global config
 table.
 
 Example:
