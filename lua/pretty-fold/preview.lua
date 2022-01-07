@@ -84,10 +84,6 @@ function M.show_preview()
    wo[winid].foldenable = false
    wo[winid].signcolumn = 'no'
 
-   -- if indent ~= 0 then
-   --    fn.win_execute(winid, string.format('normal %dzl', indent), true)
-   -- end
-
    _G.pretty_fold_preview[curbufnr].close = function()
       api.nvim_win_close(winid, false)
       api.nvim_buf_delete(bufnr, {force = true, unload = false})
@@ -108,11 +104,10 @@ function M.show_preview()
          max_line_len < room_right and max_line_len or room_right)
    end
 
-   -- CursorHold
    vim.cmd(string.format([[
       augroup fold_preview
          au!
-         au CursorMoved,BufLeave,ModeChanged <buffer> ++once lua _G.pretty_fold_preview[%d].close()
+         au CursorMoved,ModeChanged <buffer> ++once lua _G.pretty_fold_preview[%d].close()
          au WinScrolled <buffer> lua _G.pretty_fold_preview[%d].scroll()
          au VimResized  <buffer> lua _G.pretty_fold_preview[%d].resize()
       augroup END
