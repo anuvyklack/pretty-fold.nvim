@@ -126,7 +126,7 @@ function M.keymap_open_close(key)
       local bufnr = api.nvim_get_current_buf()
       if _G.pretty_fold_preview[bufnr] then
          -- For smoothness to avoid annoying screen flickering.
-         fn.timer_start(1, _G.pretty_fold_preview[bufnr].close)
+         vim.defer_fn(_G.pretty_fold_preview[bufnr].close, 1)
       end
    else
       api.nvim_command('normal! '..key)
@@ -139,7 +139,7 @@ function M.keymap_close(key)
       local bufnr = api.nvim_get_current_buf()
       if _G.pretty_fold_preview[bufnr] then
          -- For smoothness to avoid annoying screen flickering.
-         fn.timer_start(1, _G.pretty_fold_preview[bufnr].close)
+         vim.defer_fn(_G.pretty_fold_preview[bufnr].close, 1)
       end
    elseif fn.foldclosed('.') ~= -1 then
       api.nvim_command('normal! zv')
