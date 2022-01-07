@@ -7,7 +7,7 @@
 
 https://user-images.githubusercontent.com/13056013/148261501-56677c8f-24a7-4c45-b008-8c1863bf06e8.mp4
 
-## Instalation and quickstart
+## Installation and quickstart
 
 Installation and setup example with [packer](https://github.com/wbthomason/packer.nvim):
 
