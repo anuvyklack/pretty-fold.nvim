@@ -52,6 +52,10 @@ local default_config = {
       { 'if%s', 'end' },
       { 'do%s', 'end' },
       { 'for%s', 'end' },
+
+      -- For `do ... end` blocks:
+      -- beginning of the line -> any number of spaces -> 'do' -> end of the line
+      { '^%s*do$', 'end' },
    },
 }
 
