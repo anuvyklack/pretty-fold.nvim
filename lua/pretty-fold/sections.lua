@@ -92,12 +92,12 @@ function M.content(config)
       end
    end
 
-   if config.comment_signs then
+   if config.process_comment_signs then
       for i, sign in ipairs(comment_signs) do
          content = content:gsub(sign,
-            (config.comment_signs == 'spaces' and string.rep(' ', comment_signs_len[i]))
+            (config.process_comment_signs == 'spaces' and string.rep(' ', comment_signs_len[i]))
             or
-            (config.comment_signs == 'delete' and '')
+            (config.process_comment_signs == 'delete' and '')
          )
       end
    end
