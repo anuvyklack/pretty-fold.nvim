@@ -1,3 +1,4 @@
+local util = require('pretty-fold.util')
 local v = vim.v
 local bo = vim.bo
 local opt = vim.opt
@@ -6,13 +7,9 @@ local M = {}
 
 ---@return string content modified first nonblank line of the folded region
 function M.content(config)
-   ---The number of the line from which produces content for the fold string:
-   ---first non-blank line.
-   ---@type number
-   local line_num = v.foldstart
    ---The content of the 'content' section.
    ---@type string
-   local content = fn.getline(line_num)
+   local content = fn.getline(v.foldstart)
 
    ---The list of comment characters for the current buffer, where all Lua magic
    ---characters are escaped.
@@ -21,6 +18,17 @@ function M.content(config)
    ---List with comment signs lengths.
    ---@type number[]
    local comment_signs_len = {}
+
+   -- Add additional comment signs from 'config.comment_signs' table.
+   if not vim.tbl_isempty(config.comment_signs) then
+      comment_signs = {
+         #comment_signs == 1 and unpack(comment_signs) or comment_signs,
+         unpack(config.comment_signs)
+      }
+   end
+   comment_signs = vim.tbl_flatten(comment_signs)
+   comment_signs = util.unique_comment_signs(comment_signs)
+
    if vim.tbl_isempty(comment_signs) then
       comment_signs[1] = ''
       comment_signs_len[1] = 0
@@ -46,9 +54,15 @@ function M.content(config)
    -- If after removimg fold markers and comment signs we get blank line,
    -- take next nonblank.
    if content:match('^%s*$') then
-      line_num = fn.nextnonblank(v.foldstart + 1)
+      local line_num = fn.nextnonblank(v.foldstart + 1)
       if line_num ~= 0 and line_num <= v.foldend then
-         content = fn.getline(line_num)
+         if config.process_comment_signs then
+            content = fn.getline(line_num)
+         else
+            content = table.concat({
+               fn.getline(v.foldstart), ' ', vim.trim(fn.getline(line_num))
+            })
+         end
       end
    end
 
