@@ -1,4 +1,5 @@
 local ffi = require("ffi")
+local util = require("pretty-fold.util")
 local wo = vim.wo
 local fn = vim.fn
 local api = vim.api
@@ -27,7 +28,10 @@ local default_config = {
    -- "spaces" : Replace all comment signs with equal number of spaces.
    --  false   : Do nothing with comment signs.
    ---@type string|boolean
-   comment_signs = 'spaces',
+   process_comment_signs = 'spaces',
+
+   ---Comment signs additional to '&commentstring' option.
+   comment_signs = {},
 
    -- List of patterns that will be removed from content foldtext section.
    stop_words = {
@@ -98,6 +102,37 @@ local function configure_fold_text(input_config)
             input_config_is_fdm_specific = true
             break
          end
+      end
+   end
+
+   do -- Check if deprecated option lables was used.
+      local old = 'comment_signs'
+      local new = 'process_comment_signs'
+      local status = false
+
+      if input_config_is_fdm_specific then
+         for _, k in ipairs(vim.tbl_keys(input_config)) do
+            if vim.tbl_contains( vim.tbl_keys(input_config[k]), old)
+               and type(input_config[k][old]) == "string"
+            then
+               input_config[k][new], input_config[k][old] = input_config[k][old], nil
+               status = true
+            end
+         end
+      else
+         if vim.tbl_contains( vim.tbl_keys(input_config), old)
+            and type(input_config[old]) == "string"
+         then
+            input_config[new], input_config[old] = input_config[old], nil
+            status = true
+         end
+      end
+
+      if status then
+         util.warn( string.format(
+            '"%s" option was renamed to "%s". Please update your config to avoid errors in the future.',
+             old, new
+         ))
       end
    end
 

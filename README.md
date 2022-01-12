@@ -46,11 +46,14 @@ pretty-fold.nvim comes with the following defaults:
    -- "delete" : Delete all comment signs from the fold string.
    -- "spaces" : Replace all comment signs with equal number of spaces.
    -- false    : Do nothing with comment signs.
-   comment_signs = 'spaces',
+   process_comment_signs = 'spaces',
+
+   -- Comment signs additional to the value of `&commentstring` option.
+   comment_signs = {},
 
    -- List of patterns that will be removed from content foldtext section.
    stop_words = {
-      '@brief%s*', -- (for cpp) Remove '@brief' and all spaces after.
+      '@brief%s*', -- (for C++) Remove '@brief' and all spaces after.
    },
 
    add_close_pattern = true,
@@ -70,8 +73,7 @@ pretty-fold.nvim comes with the following defaults:
 The main part. Contains two tables: `config.sections.left` and
 `config.sections.right` which content will be left and right aligned
 respectively. Each of them can contain [service sections](#service-sections),
-strings and functions that return string. All functions accept config table as
-an argument.
+strings and functions that return string.
 
 #### Service sections
 
@@ -82,6 +84,28 @@ The strings from the table below will be expanded according to the table.
 | `'content'`                | The content of the first non-blank line of the folded region, somehow modified according to other options. |
 | `'number_of_folded_lines'` | The number of folded lines. |
 | `'percentage'`             | The percentage of the folded lines out of the whole buffer. |
+
+#### Custom functions
+
+All functions accept config table as an argument, so if you would like to pass
+any arguments into your custom function, place them into the config table which
+you pass to `setup` function and then you can access them inside your function,
+like this:
+
+```lua
+require('pretty-fold').setup {
+   custom_function_arg = 'Hello from inside custom function!',
+   sections = {
+      left = {
+         function(config)
+            return config.custom_function_arg
+         end
+      },
+   }
+}
+```
+
+![image](https://user-images.githubusercontent.com/13056013/149224663-aad3e2cd-411a-4a8d-b2a4-a821795dfade.png)
 
 ### `fill_char`
 
@@ -95,9 +119,9 @@ Remove foldmarkers from the `content` section.
 
 Keep the indentation of the content of the fold string.
 
-### `comment_signs`
+### `process_comment_signs`
 
-What to do with comment signs.
+What to do with comment signs:
 
 | Option     | Description |
 | ---------- | ----------- |
@@ -105,9 +129,28 @@ What to do with comment signs.
 | `'spaces'` | replace all comment signs with equal number of spaces |
 | `false`    | do nothing with comment signs |
 
+### `comment_signs`
+
+Table with additional comment signs (additional to the value of `&commentstring` option).
+
+Example for Lua. Default `&commentstring` value for Lua is: `'--'`.
+
+```lua
+comment_signs = {
+    { '--[[', '--]]' }, -- multiline comment
+}
+```
+
+Example for C++.  Default `&commentstring` value for C++ is: `{ '/*', '*/' }`
+
+```lua
+comment_signs = { '//' }
+```
+
 ### `stop_words`
 
-Patterns that will be removed from the `content` section.
+[Lua patterns](https://www.lua.org/manual/5.1/manual.html#5.4.1) that will be
+removed from the `content` section.
 
 ### `matchup_patterns`
 
@@ -130,45 +173,9 @@ The comment substring in foldtext is correctly handled on close pattern adding.
 
 ![image](https://user-images.githubusercontent.com/13056013/148239172-f1d13021-b2c5-43ee-930b-aaeb8d079a1b.png)
 
-If `comment_signs = 'spaces'` is set, the output will be
+If `process_comment_signs = 'spaces'` is set, the output will be
 
 ![image](https://user-images.githubusercontent.com/13056013/148242150-ac25edd9-b9b4-4ebe-b567-a38ff67d76c8.png)
-
-### Examples
-
-```lua
-require('pretty-fold').setup{
-   keep_indentation = false,
-   fill_char = '•',
-   sections = {
-      left = {
-         '+', function() return string.rep('-', vim.v.foldlevel) end,
-         ' ', 'number_of_folded_lines', ':', 'content',
-      },
-      right = nil
-   }
-}
-```
-
-![image](https://user-images.githubusercontent.com/13056013/148228541-8275f7c7-973a-4cbd-bf9b-4b1ea7e2cc1c.png)
-
-```lua
-require('pretty-fold').setup{
-   keep_indentation = false,
-   fill_char = '━',
-   sections = {
-      left = {
-         '━ ', function() return string.rep('*', vim.v.foldlevel) end, ' ━┫', 'content', '┣'
-      },
-      right = {
-         '┫ ', 'number_of_folded_lines', ': ', 'percentage', ' ┣━━',
-      }
-   }
-}
-```
-
-![image](https://user-images.githubusercontent.com/13056013/148228526-980c62fa-71d2-40d0-b91b-439528e8cbce.png)
-
 
 ### Setup for particular filetype
 
@@ -189,8 +196,8 @@ require('pretty-fold').ft_setup(filtype: string, config: table)
 This function should be called for every buffer of the desired filetype, but
 this plugin doesn't provide any autocommands to do this because Neovim (and
 Vim) has a much more convenient mechanism to do this: **`after/ftplugin` directory**.
-To setup foldtext with pretty-fold.nvim plugin only for, for example, C++ files
-add to the file (on Linux)
+
+For example, to setup foldtext only for C++ files, add to the file (on Linux)
 
 ```sh
 $HOME/.config/nvim/after/ftplugin/cpp.lua
@@ -224,8 +231,63 @@ Example:
 ```lua
 require('pretty-fold').setup({
     {...}, -- global config table for all Foldmethods
-    marker = { comment_signs = 'spaces' },
-    expr   = { comment_signs = false },
+    marker = { process_comment_signs = 'spaces' },
+    expr   = { process_comment_signs = false },
+})
+```
+
+### Examples
+
+```lua
+require('pretty-fold').setup{
+   keep_indentation = false,
+   fill_char = '•',
+   sections = {
+      left = {
+         '+', function() return string.rep('-', vim.v.foldlevel) end,
+         ' ', 'number_of_folded_lines', ':', 'content',
+      }
+   }
+}
+```
+
+![image](https://user-images.githubusercontent.com/13056013/148228541-8275f7c7-973a-4cbd-bf9b-4b1ea7e2cc1c.png)
+
+```lua
+require('pretty-fold').setup{
+   keep_indentation = false,
+   fill_char = '━',
+   sections = {
+      left = {
+         '━ ', function() return string.rep('*', vim.v.foldlevel) end, ' ━┫', 'content', '┣'
+      },
+      right = {
+         '┫ ', 'number_of_folded_lines', ': ', 'percentage', ' ┣━━',
+      }
+   }
+}
+```
+
+![image](https://user-images.githubusercontent.com/13056013/148228526-980c62fa-71d2-40d0-b91b-439528e8cbce.png)
+
+#### For C++ to get nice foldtext for Doxygen comments
+
+![image](https://user-images.githubusercontent.com/13056013/149036027-2fa5d85b-5525-4d54-b69f-07298f2422e3.png)
+
+![image](https://user-images.githubusercontent.com/13056013/149036034-bee3aef5-a5fe-445b-977f-61030c26e4f8.png)
+
+```lua
+require('pretty-fold').ft_setup('cpp', {
+   process_comment_signs = false,
+   comment_signs = {
+      '/**', -- C++ Doxygen comments
+   },
+   stop_words = {
+      '%s%*',      -- a space and star char
+      '@brief%s*', -- '@brief' and any number of spaces after
+      -- or in sigle pattern:
+      -- '%*%s*@brief%s*', -- * -> any number of spaces -> @brief -> all spaces after
+   },
 })
 ```
 
