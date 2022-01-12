@@ -5,11 +5,55 @@ local fn = vim.fn
 local g = vim.g
 local M = {}
 
+M.config = {
+   key = 'h', -- Only 'h' or 'l' keys are supported.
+   border = {' ', '', ' ', ' ', ' ', ' ', ' ', ' '},
+}
+
 _G.pretty_fold_preview = {}
+
+---@param config table
+function M.setup(config)
+   M.config = vim.tbl_deep_extend('force', M.config, config)
+   config = M.config
+
+   ---Shifts due to each of the 4 parts of the border: {up, right, down, left}.
+   M.border_shift = {}
+   if type(config.border) == "string" then
+      if config.border == 'none' then
+         config.border_shift = {0,0,0,0}
+      elseif vim.tbl_contains({ "single", "double", "rounded", "solid" },
+                              config.border)
+      then
+         config.border_shift = {-1,-1,-1,-1}
+      elseif config.border == 'shadow' then
+         config.border_shift = {0,-1,-1,0}
+      end
+   elseif type(config.border) == 'table' then
+      for i = 1, 4 do
+         config.border_shift[i] = config.border[i*2] == '' and 0 or -1
+      end
+   else
+      assert(false, 'Invalid border type or value')
+   end
+
+   local key = M.config.key
+   assert(key == 'h' or key == 'l', "Only 'h' or 'l' keys are supported!")
+   local second_key = key == 'h' and 'l' or 'h'
+
+   g.fold_preview_cocked = true
+   vim.cmd(string.format([[
+      nnoremap %s <cmd>lua require('pretty-fold.preview').keymap_open_close('%s')<cr>
+      nnoremap %s <cmd>lua require('pretty-fold.preview').keymap_close('%s')<cr>
+      ]], key, key, second_key, second_key
+   ))
+end
 
 ---Open popup window with folded text preview. Also set autocommands to close
 ---popup window and change its size on scrolling and vim resizing.
 function M.show_preview()
+   local config = M.config
+
    ---Current buffer ID
    ---@type number
    local curbufnr = api.nvim_get_current_buf()
@@ -68,13 +112,16 @@ function M.show_preview()
    local room_right = api.nvim_win_get_width(0) - gutter_width - indent
 
    local winid = api.nvim_open_win(bufnr, false, {
+      border = config.border,
       relative = 'win',
       bufpos = { -- Zero-indexed, that's why minus one.
          fold_start - 1,
          indent,
       },
-      border = {' ', '', ' ', ' ', ' ', ' ', ' ', ' '},
-      row = 0, col = -1, -- The position of the window relative to 'bufos' field.
+      -- The position of the window relative to 'bufos' field.
+      row = config.border_shift[1],
+      col = config.border_shift[4],
+
       width = max_line_len + 2 < room_right and max_line_len + 1 or room_right - 1,
       height = fold_size < room_below and fold_size or room_below,
       style = 'minimal',
