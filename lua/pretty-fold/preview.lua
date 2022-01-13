@@ -37,16 +37,18 @@ function M.setup(config)
       assert(false, 'Invalid border type or value')
    end
 
-   local key = M.config.key
-   assert(key == 'h' or key == 'l', "Only 'h' or 'l' keys are supported!")
-   local second_key = key == 'h' and 'l' or 'h'
+   if M.config.key then
+      local key = M.config.key
+      assert(key == 'h' or key == 'l', "Only 'h' or 'l' keys are supported!")
+      local second_key = key == 'h' and 'l' or 'h'
 
-   g.fold_preview_cocked = true
-   vim.cmd(string.format([[
-      nnoremap %s <cmd>lua require('pretty-fold.preview').keymap_open_close('%s')<cr>
-      nnoremap %s <cmd>lua require('pretty-fold.preview').keymap_close('%s')<cr>
-      ]], key, key, second_key, second_key
-   ))
+      g.fold_preview_cocked = true
+      vim.cmd(string.format([[
+         nnoremap %s <cmd>lua require('pretty-fold.preview').keymap_open_close('%s')<cr>
+         nnoremap %s <cmd>lua require('pretty-fold.preview').keymap_close('%s')<cr>
+         ]], key, key, second_key, second_key
+      ))
+   end
 end
 
 ---Open popup window with folded text preview. Also set autocommands to close

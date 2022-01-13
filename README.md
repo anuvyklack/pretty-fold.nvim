@@ -322,7 +322,7 @@ Available settngs with default values:
 
 ```lua
 {
-   key = 'h', -- choose 'h' or 'l' key
+   key = 'h', -- 'h', 'l' or nil (if you would like to set your own keybinding)
 
    -- 'none', "single", "double", "rounded", "solid", 'shadow' or table
    -- For explanation see: :help nvim_open_win()
