@@ -131,7 +131,9 @@ What to do with comment signs:
 
 ### `comment_signs`
 
-Table with additional comment signs (additional to the value of `&commentstring` option).
+Table with comment signs additional to the value of `&commentstring` option.
+Add additional comment signs only when you really need them. Otherwise, this
+gives computational overhead without any benefits.
 
 Example for Lua. Default `&commentstring` value for Lua is: `'--'`.
 
@@ -272,10 +274,6 @@ require('pretty-fold').setup{
 
 #### For C++ to get nice foldtext for Doxygen comments
 
-![image](https://user-images.githubusercontent.com/13056013/149036027-2fa5d85b-5525-4d54-b69f-07298f2422e3.png)
-
-![image](https://user-images.githubusercontent.com/13056013/149036034-bee3aef5-a5fe-445b-977f-61030c26e4f8.png)
-
 ```lua
 require('pretty-fold').ft_setup('cpp', {
    process_comment_signs = false,
@@ -290,6 +288,10 @@ require('pretty-fold').ft_setup('cpp', {
    },
 })
 ```
+
+![image](https://user-images.githubusercontent.com/13056013/149036027-2fa5d85b-5525-4d54-b69f-07298f2422e3.png)
+
+![image](https://user-images.githubusercontent.com/13056013/149036034-bee3aef5-a5fe-445b-977f-61030c26e4f8.png)
 
 ## Preview
 
