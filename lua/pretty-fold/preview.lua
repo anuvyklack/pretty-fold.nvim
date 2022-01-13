@@ -37,13 +37,15 @@ function M.setup(config)
       assert(false, 'Invalid border type or value')
    end
 
-   local key = M.config.key
-   assert(key == 'h' or key == 'l', "Only 'h' or 'l' keys are supported!")
-   local second_key = key == 'h' and 'l' or 'h'
+   if M.config.key then
+      local key = M.config.key
+      assert(key == 'h' or key == 'l', "Only 'h' or 'l' keys are supported!")
+      local second_key = key == 'h' and 'l' or 'h'
 
-   g.fold_preview_cocked = true
-   vim.keymap.set('n', key,        function() M.keymap_open_close(key)   end)
-   vim.keymap.set('n', second_key, function() M.keymap_close(second_key) end)
+      g.fold_preview_cocked = true
+      vim.keymap.set('n', key,        function() M.keymap_open_close(key)   end)
+      vim.keymap.set('n', second_key, function() M.keymap_close(second_key) end)
+   end
 end
 
 ---Open popup window with folded text preview. Also set autocommands to close
@@ -71,20 +73,15 @@ function M.show_preview()
    ---@type number
    local room_below = api.nvim_win_get_height(0) - fn.winline() + 1
 
-   local indent = fn.indent(fold_start)
-
    ---The maximum line length of the folded region.
    local max_line_len = 0
+
+   --- @type string[]
    local folded_lines = api.nvim_buf_get_lines(0, fold_start - 1, fold_end, true)
+   local indent = #(folded_lines[1]:match('^%s+') or '')
    for i, line in ipairs(folded_lines) do
       if indent > 0 then
-         local tabs = line:match('^\t+')
-         if tabs then
-            line = tabs:gsub('\t', string.rep(' ', bo.tabstop)) .. line:sub(#tabs + 1)
-            -- line = string.rep(' ', fn.strdisplaywidth(tabs)) .. line:sub(#tabs + 1)
-         end
-         line = line:sub(indent + 1)
-         folded_lines[i] = line
+         folded_lines[i] = line:sub(indent + 1)
       end
 
       local line_len = fn.strdisplaywidth(line)
