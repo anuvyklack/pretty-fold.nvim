@@ -18,7 +18,7 @@ function M.setup(config)
    config = M.config
 
    ---Shifts due to each of the 4 parts of the border: {up, right, down, left}.
-   M.border_shift = {}
+   config.border_shift = {}
    if type(config.border) == "string" then
       if config.border == 'none' then
          config.border_shift = {0,0,0,0}
@@ -31,7 +31,7 @@ function M.setup(config)
       end
    elseif type(config.border) == 'table' then
       for i = 1, 4 do
-         config.border_shift[i] = config.border[i*2] == '' and 0 or -1
+         M.config.border_shift[i] = config.border[i*2] == '' and 0 or -1
       end
    else
       assert(false, 'Invalid border type or value')
@@ -195,22 +195,12 @@ function M.keymap_close(key)
    end
 end
 
----Setup default keybinding to open preview popup window.
----Only 'h' or 'l' keys are supported.
+---For backward compatibility
 ---@param key?
 ---| '"h"'
 ---| '"l"'
 function M.setup_keybinding(key)
-   key = key or 'h'
-   assert(key == 'h' or key == 'l', "Only 'h' or 'l' keys are supported!")
-   local second_key = key == 'h' and 'l' or 'h'
-
-   g.fold_preview_cocked = true
-   vim.cmd(string.format([[
-      nnoremap %s <cmd>lua require('pretty-fold.preview').keymap_open_close('%s')<cr>
-      nnoremap %s <cmd>lua require('pretty-fold.preview').keymap_close('%s')<cr>
-      ]], key, key, second_key, second_key
-   ))
+   M.setup{ key = key }
 end
 
 return M
