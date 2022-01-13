@@ -15,7 +15,7 @@ Installation and setup example with [packer](https://github.com/wbthomason/packe
 use{ 'anuvyklack/pretty-fold.nvim',
    config = function()
       require('pretty-fold').setup{}
-      require('pretty-fold.preview').setup_keybinding()
+      require('pretty-fold.preview').setup()
    end
 }
 ```
@@ -309,10 +309,26 @@ buffer leaving.
 To enable this feature call
 
 ```lua
-require('pretty-fold.preview').setup_keybinding('h') -- choose 'h' or 'l' key
+require('pretty-fold.preview').setup {
+   key = 'h', -- choose 'h' or 'l' key
+}
 ```
 
-**Warning:** Only `h` or `l` keys can be passed to this function, any other will cause an error.
+**Warning:** Only `h` or `l` keys can be passed, any other will cause an error.
+
+### Configuration
+
+Available settngs with default values:
+
+```lua
+{
+   key = 'h', -- choose 'h' or 'l' key
+
+   -- 'none', "single", "double", "rounded", "solid", 'shadow' or table
+   -- For explanation see: :help nvim_open_win()
+   border = {' ', '', ' ', ' ', ' ', ' ', ' ', ' '},
+}
+```
 
 ### Custom preview mapping
 
