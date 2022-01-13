@@ -132,8 +132,8 @@ What to do with comment signs:
 ### `comment_signs`
 
 Table with comment signs additional to the value of `&commentstring` option.
-Add additional comment signs only when you really need them. Otherwise, this
-gives computational overhead without any benefits.
+Add additional comment signs only when you really need them.  Otherwise, they
+give computational overhead without any benefits.
 
 Example for Lua. Default `&commentstring` value for Lua is: `'--'`.
 
