@@ -156,7 +156,7 @@ end
 -- Setup the global 'foldtext' vim option.
 ---@param config table
 function M.setup(config)
-   config = configure_fold_text(config)
+   config = configure_fold_text(config or {})
    M.foldtext.global = function() return fold_text(config) end
    vim.opt.foldtext = 'v:lua.require("pretty-fold").foldtext.global()'
 end

@@ -14,7 +14,7 @@ _G.pretty_fold_preview = {}
 
 ---@param config table
 function M.setup(config)
-   M.config = vim.tbl_deep_extend('force', M.config, config)
+   M.config = vim.tbl_deep_extend('force', M.config, config or {})
    config = M.config
 
    ---Shifts due to each of the 4 parts of the border: {up, right, down, left}.
