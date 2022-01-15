@@ -1,14 +1,10 @@
 local M = {}
 
-function M.debug(x)
-   print(vim.inspect(x))
-end
-
 ---Raise a warning message
 ---@param msg string
 function M.warn(msg)
    vim.schedule(function()
-      vim.notify_once('[pretty-fold.nvim] '..msg, vim.log.levels.WARN)
+      vim.notify('[pretty-fold.nvim] '..msg, vim.log.levels.WARN)
    end)
 end
 
