@@ -14,7 +14,7 @@ local M = {
 -- Labels for every vim foldmethod config table (:help foldmethod) and one
 -- general config unlabeled table (accessible with config[1]) to seek into if
 -- no value was found in foldmethod specific config table.
-local foldmethods = { 1, 'manual', 'indent', 'expr', 'marker', 'syntax' }
+local foldmethods = { 1, 'manual', 'indent', 'expr', 'marker', 'syntax', 'diff' }
 
 local default_config = {
    fill_char = '•',
