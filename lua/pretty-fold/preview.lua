@@ -84,9 +84,9 @@ function M.show_preview()
    local indent = #(folded_lines[1]:match('^%s+') or '')
    for i, line in ipairs(folded_lines) do
       if indent > 0 then
-         folded_lines[i] = line:sub(indent + 1)
+         line = line:sub(indent + 1)
       end
-
+      folded_lines[i] = line
       local line_len = fn.strdisplaywidth(line)
       if line_len > max_line_len then max_line_len = line_len end
    end
