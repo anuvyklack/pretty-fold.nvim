@@ -14,7 +14,7 @@ local M = {
 -- Labels for every vim foldmethod config table (:help foldmethod) and one
 -- general config unlabeled table (accessible with config[1]) to seek into if
 -- no value was found in foldmethod specific config table.
-local foldmethods = { 1, 'manual', 'indent', 'expr', 'marker', 'syntax' }
+local foldmethods = { 1, 'manual', 'indent', 'expr', 'marker', 'syntax', 'diff' }
 
 local default_config = {
    fill_char = '•',
@@ -156,7 +156,7 @@ end
 -- Setup the global 'foldtext' vim option.
 ---@param config table
 function M.setup(config)
-   config = configure_fold_text(config)
+   config = configure_fold_text(config or {})
    M.foldtext.global = function() return fold_text(config) end
    vim.opt.foldtext = 'v:lua.require("pretty-fold").foldtext.global()'
 end

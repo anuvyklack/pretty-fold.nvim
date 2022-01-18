@@ -14,7 +14,7 @@ _G.pretty_fold_preview = {}
 
 ---@param config table
 function M.setup(config)
-   M.config = vim.tbl_deep_extend('force', M.config, config)
+   M.config = vim.tbl_deep_extend('force', M.config, config or {})
    config = M.config
 
    ---Shifts due to each of the 4 parts of the border: {up, right, down, left}.
@@ -81,9 +81,9 @@ function M.show_preview()
    local indent = #(folded_lines[1]:match('^%s+') or '')
    for i, line in ipairs(folded_lines) do
       if indent > 0 then
-         folded_lines[i] = line:sub(indent + 1)
+         line = line:sub(indent + 1)
       end
-
+      folded_lines[i] = line
       local line_len = fn.strdisplaywidth(line)
       if line_len > max_line_len then max_line_len = line_len end
    end

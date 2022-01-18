@@ -1,9 +1,5 @@
 local M = {}
 
-function M.debug(x)
-   print(vim.inspect(x))
-end
-
 ---Raise a warning message
 ---@param msg string
 function M.warn(msg)
