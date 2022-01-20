@@ -179,9 +179,15 @@ end
 
 ---@return string
 function M.percentage()
-   local fold_size = v.foldend - v.foldstart + 1  -- The number of folded lines.
-   local pnum = math.floor(100 * fold_size / vim.api.nvim_buf_line_count(0))
-   return (pnum < 10 and ' ' or '') .. pnum .. '%'
+   local folded_lines = v.foldend - v.foldstart + 1  -- The number of folded lines.
+   local total_lines = vim.api.nvim_buf_line_count(0)
+   local pnum = math.floor(100 * folded_lines / total_lines)
+   if pnum == 0 then
+      pnum = tostring(100 * folded_lines / total_lines):sub(2, 3)
+   elseif pnum < 10 then
+      pnum = ' '..pnum
+   end
+   return pnum .. '%'
 end
 
 return setmetatable(M, {
