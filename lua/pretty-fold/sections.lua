@@ -95,35 +95,124 @@ function M.content(config)
       end
    end
 
-   if config.add_close_pattern then  -- Add matchup pattern
-      local last_line = fn.getline(v.foldend)
+   if type(config.add_close_pattern) == "boolean"  -- Add matchup pattern
+      and config.add_close_pattern
+   then
+      local str = content
+      local found_patterns = {}
+      for _, pat in ipairs(config.matchup_patterns) do
+         local found = {}
 
-      for _, c in ipairs(vim.tbl_flatten(comment_signs)) do
-         last_line = last_line:gsub(c..'.*$', '')
+         local start, stop = nil, 0
+         while stop do
+            start, stop = str:find(pat[1], stop + 1)
+            if start then
+               table.insert(found, { start = start, stop = stop, pat = pat[1] })
+            end
+         end
+
+         local num_op = #found  ---number of opening patterns
+         if num_op > 0 then
+            start, stop = nil, 0
+            while stop do
+               start, stop = str:find(pat[2], stop + 1)
+               if start then
+                  table.insert(found, { start = start, stop = stop, pat = pat[2] })
+               end
+               -- If number of closing patterns become equal to number of openning
+               -- patterns, then break.
+               if #found - num_op == num_op then break end
+            end
+         end
+
+         if num_op > 0 and num_op ~= #found then
+            table.sort(found, function(a, b)
+               return a.start < b.start and true or false
+            end)
+
+            local str_parts = {}
+            table.insert(str_parts, str:sub(1, found[1].start - 1))
+            for i = 1, #found - 1 do
+               table.insert(str_parts, str:sub(found[i].stop + 1, found[i+1].start - 1))
+            end
+            table.insert(str_parts, str:sub(found[#found].stop + 1))
+            str = table.concat(str_parts, ' ')
+
+            ---previous, current, next
+            local p, c, n = nil, 1, 2
+            while true do
+               if found[c].pat == pat[1] and found[n].pat == pat[2] then
+                  table.remove(found, n)
+                  table.remove(found, c)
+                  if p then
+                     c, n = p, c
+                     p = p > 1 and p-1 or nil
+                  end
+               else
+                  c, n = c + 1, n + 1
+                  p = (p or 0) + 1
+               end
+               if n > #found then break end
+            end
+         end
+
+         for _, f in ipairs(found) do
+            table.insert(found_patterns, { pat = pat, pos = f.start })
+         end
       end
+      table.sort(found_patterns, function(a, b)
+         return a.pos < b.pos and true or false
+      end)
 
-      last_line = vim.trim(last_line)
-      for _, p in ipairs(config.matchup_patterns) do
-         if content:find( p[1] ) and last_line:find( p[2] ) then
+      if not vim.tbl_isempty(found_patterns) then
+         local comment_str = ''
+         for _, c in ipairs(comment_signs) do
+            local c_start = content:find(table.concat{'%s*', c[1] or c, '.*$'})
 
-            local ellipsis = (#p[1] == 1) and '...' or ' ... '
-
-            local comment_str = nil
-            for _, c in ipairs(comment_signs) do
-               comment_str = content:match( table.concat{'%s*', c[1] or c, '.*$'})
+            if c_start then
+               comment_str = content:sub(c_start)
+               content = content:sub(1, c_start - 1)
+               break
             end
+         end
 
-            if comment_str then
-               content = content:gsub(
-                  vim.pesc(comment_str),
-                  table.concat{ ellipsis, last_line, comment_str }
-               )
-            else
-               content = table.concat{ content, ellipsis, last_line }
-               -- content = table.concat{ content, ellipsis, p[2] }
+         local ellipsis = #found_patterns[#found_patterns].pat[2] == 1 and '...' or ' ... '
+
+         str = { content, ellipsis }
+         for i = #found_patterns, 1, -1 do
+            table.insert(str, found_patterns[i].pat[2])
+         end
+         table.insert(str, comment_str)
+         content = table.concat(str)
+      end
+   elseif config.add_close_pattern == 'last_line' then
+      if config.add_close_pattern then  -- Add matchup pattern
+         local last_line = fn.getline(v.foldend)
+
+         for _, c in ipairs(vim.tbl_flatten(comment_signs)) do
+            last_line = last_line:gsub(c..'.*$', '')
+         end
+
+         last_line = vim.trim(last_line)
+         for _, p in ipairs(config.matchup_patterns) do
+            if content:find( p[1] ) and last_line:find( p[2] ) then
+
+               local ellipsis = (#p[2] == 1) and '...' or ' ... '
+
+               local comment_str = ''
+               for _, c in ipairs(comment_signs) do
+                  local c_start = content:find(table.concat{'%s*', c[1] or c, '.*$'})
+
+                  if c_start then
+                     comment_str = content:sub(c_start)
+                     content = content:sub(1, c_start - 1)
+                     break
+                  end
+               end
+
+               content = table.concat{ content, ellipsis, last_line, comment_str }
+               break
             end
-
-            break
          end
       end
    end
@@ -162,7 +251,7 @@ function M.content(config)
    -- Exchange all occurrences of multiple spaces inside the text with
    -- 'fill_char', like this:
    -- "//      Text"  ->  "// ==== Text"
-   for blank_substr in content:gmatch( '%s%s%s+' ) do
+   for blank_substr in content:gmatch('%s%s%s+') do
       content = content:gsub(
          blank_substr,
          ' '..string.rep(config.fill_char, #blank_substr - 2)..' ',
