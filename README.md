@@ -25,7 +25,7 @@ use{ 'anuvyklack/pretty-fold.nvim',
 pretty-fold.nvim comes with the following defaults:
 
 ```lua
-{
+config = {
    fill_char = '•',
    sections = {
       left = {
@@ -56,14 +56,16 @@ pretty-fold.nvim comes with the following defaults:
       '@brief%s*', -- (for C++) Remove '@brief' and all spaces after.
    },
 
-   add_close_pattern = true,
+   add_close_pattern = true, -- true, 'last_line' or false
    matchup_patterns = {
+      -- beginning of the line -> any number of spaces -> 'do' -> end of the line
+      { '^%s*do$', 'end' }, -- `do ... end` blocks
+      { '^%s*if', 'end' },  -- if
+      { '^%s*for', 'end' }, -- for
+      { 'function%s*%(', 'end' }, -- 'function( or 'function (''
       { '{', '}' },
       { '%(', ')' }, -- % to escape lua pattern char
       { '%[', ']' }, -- % to escape lua pattern char
-      { 'if%s', 'end' },
-      { 'do%s', 'end' },
-      { 'for%s', 'end' },
    },
 }
 ```
@@ -154,14 +156,42 @@ comment_signs = { '//' }
 [Lua patterns](https://www.lua.org/manual/5.1/manual.html#5.4.1) that will be
 removed from the `content` section.
 
+### `add_close_pattern`
+
+**Default:** `true`
+
+If this option is set to `true` and any opening patterns are found in first
+non-blank line of the folded region the all close patterns will be added after
+ellipsis.  (The synthetical string with matching close patterns will be
+constructed).
+
+If it is set to `last_line`, the last line content (without comments) will be
+added after the ellipsis .  This behavior was the first algorithm I
+implemented, but turns out it is not always relevant.  For some languages (at
+least for all lisps) this does not work.  Since it is already written and if
+someone like this behavior, I keep this option to choose.
+
 ### `matchup_patterns`
 
-The list with patterns where each item is a list with two items: open and
-close patterns.
+The list with matching elements.
+Each item is a list itself with two items: opening
+[lua pattern](https://www.lua.org/manual/5.1/manual.html#5.4.1) and
+close string which will be added if oppening pattern is found.
 
-If `config.add_close_pattern` option is set to `true`, and the opening pattern is
-found in first non-blank line of the folded region the close pattern will be
-added after ellipsis (`...`). Like this:
+Examples for lua:
+
+```lua
+   matchup_patterns = {
+      -- beginning of the line -> any number of spaces -> 'do' -> end of the line
+      { '^%s*do$', 'end' }, -- `do ... end` blocks
+      { '^%s*if', 'end' },  -- if
+      { '^%s*for', 'end' }, -- for
+      { 'function%s*%(', 'end' }, -- 'function( or 'function (''
+      { '{', '}' },
+      { '%(', ')' }, -- % to escape lua pattern char
+      { '%[', ']' }, -- % to escape lua pattern char
+   },
+```
 
 ![image](https://user-images.githubusercontent.com/13056013/148240635-6945810b-4a44-4d77-b136-ac2e2f062669.png)
 
@@ -321,7 +351,7 @@ require('pretty-fold.preview').setup {
 Available settngs with default values:
 
 ```lua
-{
+config = {
    key = 'h', -- 'h', 'l' or nil (if you would like to set your own keybinding)
 
    -- 'none', "single", "double", "rounded", "solid", 'shadow' or table
