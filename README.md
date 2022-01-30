@@ -160,10 +160,10 @@ removed from the `content` section.
 
 **Default:** `true`
 
-If this option is set to `true` and any opening patterns are found in first
-non-blank line of the folded region the all close patterns will be added after
-ellipsis.  (The synthetical string with matching close patterns will be
-constructed).
+If this option is set to `true` for all opening patterns that will be found in
+the first non-blank line of the folded region, all corresponding closing
+elements will be added after ellipsis.  (The synthetical string with matching
+closing elements will be constructed).
 
 If it is set to `last_line`, the last line content (without comments) will be
 added after the ellipsis .  This behavior was the first algorithm I
@@ -199,7 +199,7 @@ Examples for lua:
 
 <!-- ![image](https://user-images.githubusercontent.com/13056013/148239208-ca2a2217-94c4-40c0-a7f1-9c44708e2c2c.png) -->
 
-The comment substring in foldtext is correctly handled on close pattern adding.
+The comment substring in foldtext is correctly handled on close elements adding.
 
 ![image](https://user-images.githubusercontent.com/13056013/148239141-190246a9-2333-42a1-a2e5-ec59e374f741.png)
 
