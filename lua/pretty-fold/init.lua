@@ -167,8 +167,7 @@ function M.ft_setup(filetype, config)
       config = configure_fold_text(config)
       M.foldtext[filetype] = function() return fold_text(config) end
    end
-   vim.opt_local.foldtext =
-      string.format('v:lua.require("pretty-fold").foldtext.%s()', filetype)
+   wo.foldtext = string.format("v:lua.require('pretty-fold').foldtext.%s()", filetype)
 end
 
 return M
