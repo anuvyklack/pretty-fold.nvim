@@ -95,6 +95,7 @@ function M.content(config)
       end
    end
 
+   -- Add matchup pattern
    if type(config.add_close_pattern) == "boolean"  -- Add matchup pattern
       and config.add_close_pattern
    then
@@ -176,7 +177,7 @@ function M.content(config)
             end
          end
 
-         local ellipsis = #found_patterns[#found_patterns].pat[2] == 1 and '...' or ' ... '
+         local ellipsis = ' ... '
 
          str = { content, ellipsis }
          for i = #found_patterns, 1, -1 do
@@ -184,9 +185,28 @@ function M.content(config)
          end
          table.insert(str, comment_str)
          content = table.concat(str)
+
+         local brackets = {
+            { vim.pesc('{ ... }'), '{...}'},
+            { vim.pesc('( ... )'), '(...)'},
+            { vim.pesc('[ ... ]'), '[...]'},
+            { vim.pesc('< ... >'), '<...>'}
+         }
+
+         -- local brackets = {
+         --    { vim.pesc(table.concat({ '{', ellipsis, '}'})), table.concat({'{', vim.trim(ellipsis), '}'})},
+         --    { vim.pesc(table.concat({'%(', ellipsis, ')'})), table.concat({'(', vim.trim(ellipsis), ')'})},
+         --    { vim.pesc(table.concat({'%[', ellipsis, ']'})), table.concat({'[', vim.trim(ellipsis), ']'})},
+         --    { vim.pesc(table.concat({ '<', ellipsis, '>'})), table.concat({'<', vim.trim(ellipsis), '>'})}
+         -- }
+
+         for _, b in ipairs(brackets) do
+            content = content:gsub(b[1], b[2])
+         end
+
       end
    elseif config.add_close_pattern == 'last_line' then
-      if config.add_close_pattern then  -- Add matchup pattern
+      if config.add_close_pattern then
          local last_line = fn.getline(v.foldend)
 
          for _, c in ipairs(vim.tbl_flatten(comment_signs)) do
