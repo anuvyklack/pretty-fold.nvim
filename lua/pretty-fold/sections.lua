@@ -17,6 +17,13 @@ function M.content(config)
    ---@type string[]
    local comment_signs = fn.split(bo.commentstring, '%s')
 
+   -- Trim redundant spaces from the beggining and the end if any.
+   if not vim.tbl_isempty(comment_signs) then
+      for i = 1, #comment_signs do
+         comment_signs[i] = vim.trim(comment_signs[i])
+      end
+   end
+
    -- Add additional comment signs from 'config.comment_signs' table.
    if not vim.tbl_isempty(config.comment_signs) then
       comment_signs = {

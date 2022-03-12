@@ -179,7 +179,7 @@ function M.keymap_open_close(key)
          vim.defer_fn(M.service_functions.close, 1)
       end
    else
-      api.nvim_command('normal! '..key)
+      api.nvim_command('normal! '..vim.v.count1..key)
    end
 end
 
@@ -193,7 +193,7 @@ function M.keymap_close(key)
    elseif fn.foldclosed('.') ~= -1 then
       api.nvim_command('normal! zv') -- open fold
    else
-      api.nvim_command('normal! '..key)
+      api.nvim_command('normal! '..vim.v.count1..key)
    end
 end
 
