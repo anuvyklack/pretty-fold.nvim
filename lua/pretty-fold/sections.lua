@@ -12,57 +12,43 @@ function M.content(config)
    ---@type string
    local content = fn.getline(v.foldstart)
 
-   ---The list of comment characters for the current buffer, where all Lua magic
-   ---characters are escaped.
-   ---@type string[]
-   local comment_signs = fn.split(bo.commentstring, '%s')
+   local comment_signs
+   do
+      comment_signs = fn.split(bo.commentstring, '%s')
 
-   -- Trim redundant spaces from the beggining and the end if any.
-   if not vim.tbl_isempty(comment_signs) then
-      for i = 1, #comment_signs do
-         comment_signs[i] = vim.trim(comment_signs[i])
+      -- Trim redundant spaces from the beggining and the end if any.
+      if not vim.tbl_isempty(comment_signs) then
+         for i = 1, #comment_signs do
+            comment_signs[i] = vim.trim(comment_signs[i])
+         end
       end
-   end
 
-   -- Add additional comment signs from 'config.comment_signs' table.
-   if not vim.tbl_isempty(config.comment_signs) then
+      -- Add additional comment signs from 'config.comment_signs' table.
+      if not vim.tbl_isempty(config.comment_signs) then
+         comment_signs = {
+            #comment_signs == 1 and unpack(comment_signs) or comment_signs,
+            unpack(config.comment_signs)
+         }
+      end
+
+      -- comment_signs = vim.tbl_flatten(comment_signs)
+      comment_signs = util.unique_comment_signs(comment_signs)
+      table.sort(comment_signs, function(a, b)
+         if type(a) == "table" then a = a[1] end
+         if type(b) == "table" then b = b[1] end
+         return #a > #b and true or false
+      end)
+
+      -- if vim.tbl_isempty(comment_signs) then
+      --    comment_signs[1] = ''
+      --    comment_signs_len[1] = 0
+      -- end
+
       comment_signs = {
-         #comment_signs == 1 and unpack(comment_signs) or comment_signs,
-         unpack(config.comment_signs)
+         raw = comment_signs,
+         escaped = util.escape_lua_patterns( vim.deepcopy(comment_signs) )
       }
    end
-
-   -- comment_signs = vim.tbl_flatten(comment_signs)
-   comment_signs = util.unique_comment_signs(comment_signs)
-   table.sort(comment_signs, function(a, b)
-      if type(a) == "table" then a = a[1] end
-      if type(b) == "table" then b = b[1] end
-      return #a > #b and true or false
-   end)
-
-   ---Table  with comment signs lengths.
-   ---@type number[]
-   local comment_signs_len = vim.deepcopy(comment_signs)
-   for i, p in ipairs(comment_signs) do
-      if type(p) == "string" then
-         -- comment_signs_len[i] = fn.strdisplaywidth(p)
-         comment_signs_len[i] = #p
-         comment_signs[i] = vim.pesc(p)
-      elseif type(p) == "table" then
-         -- comment_signs_len[i][1] = fn.strdisplaywidth(p[1])
-         -- comment_signs_len[i][2] = fn.strdisplaywidth(p[2])
-         comment_signs_len[i][1] = #p[1]
-         comment_signs_len[i][2] = #p[2]
-
-         comment_signs[i][1] = vim.pesc(p[1])
-         comment_signs[i][2] = vim.pesc(p[2])
-      end
-   end
-
-   -- if vim.tbl_isempty(comment_signs) then
-   --    comment_signs[1] = ''
-   --    comment_signs_len[1] = 0
-   -- end
 
    if config.remove_fold_markers then
       local fdm = opt.foldmarker:get()[1]
@@ -72,9 +58,10 @@ function M.content(config)
    -- If after removimg fold markers and comment signs we get blank line,
    -- take next nonblank.
    local blank = content:match('^%s*$') and true or false
+   -- Check if content string consists only of comment sign.
    local only_comment_sign = false
    if not blank then
-      for _, c in ipairs(comment_signs) do
+      for _, c in ipairs(comment_signs.escaped) do
          if content:match( table.concat{'^%s*', c[1] or c, '$'} ) then
             only_comment_sign = true
             break
@@ -88,7 +75,7 @@ function M.content(config)
             content = fn.getline(line_num)
          else
             local add_line = vim.trim(fn.getline(line_num))
-            for _, c in ipairs(comment_signs) do
+            for _, c in ipairs(comment_signs.escaped) do
                add_line = add_line:gsub( table.concat{'^', c[1] or c, '%s*'}, '')
             end
             content = table.concat({ content, ' ', add_line })
@@ -173,13 +160,20 @@ function M.content(config)
       end)
 
       if not vim.tbl_isempty(found_patterns) then
-         local comment_str = ''
-         for _, c in ipairs(comment_signs) do
-            local c_start = content:find(table.concat{'%s*', c[1] or c, '.*$'})
 
+         local comment_str = ''
+         for i = 1, #comment_signs.raw do
+            local c = comment_signs.raw[i][1] or comment_signs.raw[i]
+            local regex = vim.regex( table.concat{[[^\s*\(]], c, [[\s*\)*]]} )
+            local start, stop = regex:match_str(content)
+            local openning_comment_str = (stop ~= 0) and content:sub(start, stop) or ''
+            local striped_content = (stop ~= 0) and content:sub(stop + 1) or ''
+
+            c = comment_signs.escaped[i][1] or comment_signs.escaped[i]
+            local c_start = striped_content:find(table.concat{'%s*', c, '.-$'})
             if c_start then
-               comment_str = content:sub(c_start)
-               content = content:sub(1, c_start - 1)
+               comment_str = striped_content:sub(c_start)
+               content = openning_comment_str .. striped_content:sub(1, c_start - 1)
                break
             end
          end
@@ -212,11 +206,12 @@ function M.content(config)
          end
 
       end
+
    elseif config.add_close_pattern == 'last_line' then
       if config.add_close_pattern then
          local last_line = fn.getline(v.foldend)
 
-         for _, c in ipairs(vim.tbl_flatten(comment_signs)) do
+         for _, c in ipairs(vim.tbl_flatten(comment_signs.escaped)) do
             last_line = last_line:gsub(c..'.*$', '')
          end
 
@@ -227,7 +222,7 @@ function M.content(config)
                local ellipsis = (#p[2] == 1) and '...' or ' ... '
 
                local comment_str = ''
-               for _, c in ipairs(comment_signs) do
+               for _, c in ipairs(comment_signs.escaped) do
                   local c_start = content:find(table.concat{'%s*', c[1] or c, '.*$'})
 
                   if c_start then
@@ -244,13 +239,15 @@ function M.content(config)
       end
    end
 
-   if config.process_comment_signs then
-      for i, sign in ipairs(comment_signs) do
-         content = content:gsub(sign,
-            (config.process_comment_signs == 'spaces' and string.rep(' ', comment_signs_len[i]))
-            or
-            (config.process_comment_signs == 'delete' and '')
-         )
+   -- Process comment signs
+   if config.process_comment_signs == 'spaces' then
+      local raw_cs = vim.tbl_flatten(comment_signs.raw)
+      for i, sign in ipairs(vim.tbl_flatten( comment_signs.escaped )) do
+         content = content:gsub(sign, string.rep(' ', #raw_cs[i]))
+      end
+   elseif config.process_comment_signs == 'delete' then
+      for _, sign in ipairs(vim.tbl_flatten( comment_signs.escaped )) do
+         content = content:gsub(sign, '')
       end
    end
 
