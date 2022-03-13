@@ -155,32 +155,21 @@ function M.content(config)
       if not vim.tbl_isempty(found_patterns) then
 
          local comment_str = ''
-         for _, c in ipairs(comment_signs.escaped) do
-            c = c[1] or c
-            local striped_content = content:gsub(table.concat{'^', c, '%s*'}, '')
-            local c_start = striped_content:find(table.concat{'%s*', c, '.-$'})
+         for i = 1, #comment_signs.raw do
+            local c = comment_signs.raw[i][1] or comment_signs.raw[i]
+            local regex = vim.regex( table.concat{[[^\s*\(]], c, [[\s*\)*]]} )
+            local start, stop = regex:match_str(content)
+            local openning_comment_str = (stop ~= 0) and content:sub(start, stop) or ''
+            local striped_content = (stop ~= 0) and content:sub(stop + 1) or ''
 
+            c = comment_signs.escaped[i][1] or comment_signs.escaped[i]
+            local c_start = striped_content:find(table.concat{'%s*', c, '.-$'})
             if c_start then
                comment_str = striped_content:sub(c_start)
-               content = striped_content:sub(1, c_start - 1)
+               content = openning_comment_str .. striped_content:sub(1, c_start - 1)
                break
             end
          end
-
-         -- local rcontent = content:reverse()
-         -- local comment_str
-         -- for _, c in ipairs(comment_signs.escaped) do
-         --    comment_str = rcontent:match(table.concat{'^.-', c, '%s*'})
-         --    -- comment_str = rcontent:match('test') or ''
-         --    -- comment_str = rcontent:match('test')
-         --    if comment_str then
-         --       rcontent = rcontent:sub(#comment_str + 1)
-         --       content = rcontent:reverse()
-         --       rcontent = nil
-         --       comment_str = comment_str:reverse()
-         --       break
-         --    end
-         -- end
 
          local ellipsis = ' ... '
 
