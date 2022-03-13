@@ -1,8 +1,8 @@
-local M = {}
+local util = {}
 
 ---Raise a warning message
 ---@param msg string
-function M.warn(msg)
+function util.warn(msg)
    vim.schedule(function()
       vim.notify('[pretty-fold.nvim] '..msg, vim.log.levels.WARN)
    end)
@@ -14,7 +14,7 @@ end
 ---@param old string
 ---@param new string
 ---@return table config
-function M.config_deprecated(config, config_is_fdm_specific, old, new)
+function util.config_deprecated(config, config_is_fdm_specific, old, new)
    local status = false
 
    if config_is_fdm_specific then
@@ -32,7 +32,7 @@ function M.config_deprecated(config, config_is_fdm_specific, old, new)
    end
 
    if status then
-      M.warn( string.format(
+      util.warn( string.format(
          'pretty-fold.nvim: "%s" option was renamed to "%s" and old name will be removed soon',
           old, new
       ))
@@ -44,7 +44,7 @@ end
 ---Returns the comment signs table with all duplicate items removed.
 ---@param t table
 ---@return table
-function M.unique_comment_signs(t)
+function util.unique_comment_signs(t)
    if #t < 3 then return t end
    local ut = { t[1] }
    for i = 2, #t do
@@ -65,4 +65,19 @@ function M.unique_comment_signs(t)
    return ut
 end
 
-return M
+---Takes a table containing strings and nested tables with strings and escape
+---all Lua patterns in all strings.
+---@param ts table
+---@return table
+function util.escape_lua_patterns(ts)
+   for i, s in ipairs(ts) do
+      if type(s) == 'string' then
+         ts[i] = vim.pesc(s)
+      elseif type(s) == 'table' then
+         ts[i] = util.escape_lua_patterns(s)
+      end
+   end
+   return ts
+end
+
+return util
