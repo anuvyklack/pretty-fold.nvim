@@ -52,8 +52,12 @@ function M.content(config)
 
    if config.remove_fold_markers then
       local fdm = opt.foldmarker:get()[1]
-      content = content:gsub(vim.pesc(fdm)..'%d*', ''):gsub('%s+$', '')
+      for _, cs in ipairs(comment_signs.escaped) do
+         content = content:gsub(table.concat({cs, '%s*', vim.pesc(fdm), '%d*%s*$'}), '')
+      end
+      content = content:gsub(vim.pesc(fdm)..'%d*', '')
    end
+   content = content:gsub('%s+$', '')
 
    -- If after removimg fold markers and comment signs we get blank line,
    -- take next nonblank.
