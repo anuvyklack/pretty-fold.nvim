@@ -57,12 +57,12 @@ config = {
    },
 
    add_close_pattern = true, -- true, 'last_line' or false
+
    matchup_patterns = {
-      -- beginning of the line -> any number of spaces -> 'do' -> end of the line
       { '^%s*do$', 'end' }, -- `do ... end` blocks
       { '^%s*if', 'end' },  -- if
       { '^%s*for', 'end' }, -- for
-      { 'function%s*%(', 'end' }, -- 'function( or 'function (''
+      { 'function%s*%(', 'end' }, -- 'function(' or 'function ('
       { '{', '}' },
       { '%(', ')' }, -- % to escape lua pattern char
       { '%[', ']' }, -- % to escape lua pattern char
@@ -178,15 +178,30 @@ Each item is a list itself with two items: opening
 [lua pattern](https://www.lua.org/manual/5.1/manual.html#5.4.1) and
 close string which will be added if oppening pattern is found.
 
-Examples for lua:
+Examples for lua (Lua patterns are explained with railroad diagrams):
 
 ```lua
    matchup_patterns = {
-      -- beginning of the line -> any number of spaces -> 'do' -> end of the line
+      --                   ╭────────────────╮
+      -- ╟─ Start of line ─╯─╭ whitespace ╮─╰─ "do" ── End of line ─╢
+      --                     ╰──── * ─────╯
       { '^%s*do$', 'end' }, -- `do ... end` blocks
+
+      --                   ╭────────────────╮
+      -- ╟─ Start of line ─╯─╭ whitespace ╮─╰─ "if" ─╢
+      --                     ╰──── * ─────╯
       { '^%s*if', 'end' },  -- if
+
+      --                   ╭────────────────╮
+      -- ╟─ Start of line ─╯─╭ whitespace ╮─╰─ "for" ─╢
+      --                     ╰──── * ─────╯
       { '^%s*for', 'end' }, -- for
-      { 'function%s*%(', 'end' }, -- 'function( or 'function (''
+
+      --                ╭────────────────╮
+      -- ╟─ "function" ─╯─╭ whitespace ╮─╰─ "(" ─╢
+      --                  ╰──── * ─────╯
+      { 'function%s*%(', 'end' }, -- 'function(' or 'function ('
+
       { '{', '}' },
       { '%(', ')' }, -- % to escape lua pattern char
       { '%[', ']' }, -- % to escape lua pattern char
