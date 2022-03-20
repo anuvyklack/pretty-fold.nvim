@@ -52,8 +52,12 @@ function M.content(config)
 
    if config.remove_fold_markers then
       local fdm = opt.foldmarker:get()[1]
-      content = content:gsub(vim.pesc(fdm)..'%d*', ''):gsub('%s+$', '')
+      for _, cs in ipairs(vim.tbl_flatten(comment_signs.escaped)) do
+         content = content:gsub(table.concat({cs, '%s*', vim.pesc(fdm), '%d*%s*$'}), '')
+      end
+      content = content:gsub(vim.pesc(fdm)..'%d*', '')
    end
+   content = content:gsub('%s+$', '')
 
    -- If after removimg fold markers and comment signs we get blank line,
    -- take next nonblank.
@@ -164,7 +168,8 @@ function M.content(config)
          local comment_str = ''
          for i = 1, #comment_signs.raw do
             local c = comment_signs.raw[i][1] or comment_signs.raw[i]
-            local regex = vim.regex( table.concat{[[^\s*\(]], c, [[\s*\)*]]} )
+            -- see help: /\M
+            local regex = vim.regex( table.concat{[[\M^\s\*\(]], c, [[\s\*\)\*]]} )
             local start, stop = regex:match_str(content)
             local openning_comment_str = (stop ~= 0) and content:sub(start, stop) or ''
             local striped_content = (stop ~= 0) and content:sub(stop + 1) or ''
