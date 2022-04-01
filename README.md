@@ -326,10 +326,9 @@ require('pretty-fold').ft_setup('cpp', {
       '/**', -- C++ Doxygen comments
    },
    stop_words = {
-      '%s%*',      -- a space and star char
-      '@brief%s*', -- '@brief' and any number of spaces after
-      -- or in sigle pattern:
-      -- '%*%s*@brief%s*', -- * -> any number of spaces -> @brief -> all spaces after
+      -- ╟─ "*" ──╭──────────────╮── "@brief" ──╭──────────────╮──╢
+      --          ╰─ whitespace ─╯              ╰─ whitespace ─╯
+      '%*%s*@brief%s*',
    },
 })
 ```

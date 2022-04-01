@@ -164,21 +164,20 @@ function M.content(config)
       end)
 
       if not vim.tbl_isempty(found_patterns) then
-
-         local comment_str = ''
+         local closing_comment_str = ''
          for i = 1, #comment_signs.raw do
             local c = comment_signs.raw[i][1] or comment_signs.raw[i]
             -- see help: /\M
-            local regex = vim.regex( table.concat{[[\M^\s\*\(]], c, [[\s\*\)\*]]} )
+            local regex = vim.regex( table.concat{[[\M^\s\*\(]], c, [[\s\*\)\+]]} )
             local start, stop = regex:match_str(content)
-            local openning_comment_str = (stop ~= 0) and content:sub(start, stop) or ''
-            local striped_content = (stop ~= 0) and content:sub(stop + 1) or ''
+            local openning_comment_str = (stop and stop ~= 0) and content:sub(start, stop) or ''
+            local striped_content = (stop and stop ~= 0) and content:sub(stop + 1) or content
 
             c = comment_signs.escaped[i][1] or comment_signs.escaped[i]
             local c_start = striped_content:find(table.concat{'%s*', c, '.-$'})
             if c_start then
-               comment_str = striped_content:sub(c_start)
                content = openning_comment_str .. striped_content:sub(1, c_start - 1)
+               closing_comment_str = striped_content:sub(c_start)
                break
             end
          end
@@ -189,7 +188,7 @@ function M.content(config)
          for i = #found_patterns, 1, -1 do
             table.insert(str, found_patterns[i].pat[2])
          end
-         table.insert(str, comment_str)
+         table.insert(str, closing_comment_str)
          content = table.concat(str)
 
          local brackets = {
@@ -226,18 +225,18 @@ function M.content(config)
 
                local ellipsis = (#p[2] == 1) and '...' or ' ... '
 
-               local comment_str = ''
+               local closing_comment_str = ''
                for _, c in ipairs(comment_signs.escaped) do
                   local c_start = content:find(table.concat{'%s*', c[1] or c, '.*$'})
 
                   if c_start then
-                     comment_str = content:sub(c_start)
+                     closing_comment_str = content:sub(c_start)
                      content = content:sub(1, c_start - 1)
                      break
                   end
                end
 
-               content = table.concat{ content, ellipsis, last_line, comment_str }
+               content = table.concat{ content, ellipsis, last_line, closing_comment_str }
                break
             end
          end
