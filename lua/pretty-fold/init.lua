@@ -3,12 +3,10 @@ local util = require("pretty-fold.util")
 local wo = vim.wo
 local fn = vim.fn
 local api = vim.api
-
 ffi.cdef('int curwin_col_off(void);')
 
 local M = {
-   ---Table with all 'foldtext' functions.
-   foldtext = {}
+   foldtext = {}, -- Table with all 'foldtext' functions.
 }
 
 -- Labels for every vim foldmethod config table (:help foldmethod) and one
@@ -92,61 +90,74 @@ local function fold_text(config)
    return table.concat( vim.tbl_flatten({r.left, r.expansion_str, r.right}) )
 end
 
-local function configure_fold_text(input_config)
+---Make a ready to use config table with all keys for all foldmethos from the
+---default config table -and input config table.
+---@param config? table
+---@return table
+local function configure(config)
+   -- Flag indicating whether current function got a non-empty parameter.
+   local got_input = config and not vim.tbl_isempty(config) and true or false
+
+   -- Flag shows if only one global config table has been passed or
+   -- several config tables for different foldmethods.
    local input_config_is_fdm_specific = false
-   if input_config then
-      for _, v in ipairs(foldmethods) do
-         if input_config[v] then
+   if got_input then
+      for _, fdm in ipairs(foldmethods) do
+         if config[fdm] then
             input_config_is_fdm_specific = true
             break
          end
       end
    end
 
-   do -- Check if deprecated option lables was used.
+   -- Check if deprecated option lables was used.
+   if got_input then
       local old = 'comment_signs'
       local new = 'process_comment_signs'
       local status = false
 
       if input_config_is_fdm_specific then
-         for _, k in ipairs(vim.tbl_keys(input_config)) do
-            if vim.tbl_contains( vim.tbl_keys(input_config[k]), old)
-               and type(input_config[k][old]) == "string"
+         for _, k in ipairs(vim.tbl_keys(config)) do
+            if vim.tbl_contains( vim.tbl_keys(config[k]), old)
+               and type(config[k][old]) == "string"
             then
-               input_config[k][new], input_config[k][old] = input_config[k][old], nil
+               config[k][new], config[k][old] = config[k][old], nil
                status = true
             end
          end
       else
-         if vim.tbl_contains( vim.tbl_keys(input_config), old)
-            and type(input_config[old]) == "string"
+         if vim.tbl_contains( vim.tbl_keys(config), old)
+            and type(config[old]) == "string"
          then
-            input_config[new], input_config[old] = input_config[old], nil
+            config[new], config[old] = config[old], nil
             status = true
          end
       end
 
       if status then
-         util.warn( string.format(
+         util.warn(string.format(
             '"%s" option was renamed to "%s". Please update your config to avoid errors in the future.',
              old, new
          ))
       end
    end
 
-   local config = {}
-   for _, fdm in ipairs(foldmethods) do config[fdm] = {} end
+   if got_input and not input_config_is_fdm_specific then
+      config = { config }
+   end
+   if not config[1] then config[1] = {} end
 
-   if input_config_is_fdm_specific then
-      config = vim.tbl_deep_extend('force', config, input_config)
-   elseif input_config then
-      config[1] = vim.tbl_deep_extend('force', config[1], input_config)
+   for fdm, _ in pairs(config) do
+      config[fdm] = setmetatable(config[fdm], {
+         __index = (fdm == 1) and default_config or config[1]
+      })
    end
 
-   for _, fdm in ipairs(foldmethods) do
-      config[fdm] = setmetatable(config[fdm],
-         { __index = (fdm == 1) and default_config or config[1] })
-   end
+   config = setmetatable(config, {
+      __index = function(self, _)
+         return self[1]
+      end
+   })
 
    return config
 end
@@ -154,9 +165,21 @@ end
 -- Setup the global 'foldtext' vim option.
 ---@param config table
 function M.setup(config)
-   config = configure_fold_text(config or {})
+   config = configure(config)
    M.foldtext.global = function() return fold_text(config) end
-   vim.opt.foldtext = 'v:lua.require("pretty-fold").foldtext.global()'
+   vim.o.foldtext = 'v:lua.require("pretty-fold").foldtext.global()'
+
+   vim.api.nvim_create_autocmd('BufWinEnter', {
+      callback = function()
+         local filetype = vim.bo.filetype
+         -- config.ft_ignore
+         if M.foldtext[filetype] then
+            vim.wo.foldtext = string.format("v:lua.require('pretty-fold').foldtext.%s()", filetype)
+         else
+            vim.wo.foldtext = "v:lua.require('pretty-fold').foldtext.global()"
+         end
+      end
+   })
 end
 
 -- Setup the filetype specific window local 'foldtext' vim option.
@@ -164,10 +187,9 @@ end
 ---@param config table
 function M.ft_setup(filetype, config)
    if not M.foldtext[filetype] then
-      config = configure_fold_text(config)
+      config = configure(config)
       M.foldtext[filetype] = function() return fold_text(config) end
    end
-   wo.foldtext = string.format("v:lua.require('pretty-fold').foldtext.%s()", filetype)
 end
 
 return M
