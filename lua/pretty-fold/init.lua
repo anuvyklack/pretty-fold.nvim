@@ -7,6 +7,9 @@ ffi.cdef('int curwin_col_off(void);')
 
 local M = {
    foldtext = {}, -- Table with all 'foldtext' functions.
+   ft_ignore = { -- set with filetypes to be ignored
+      neorg = true
+   },
 }
 
 -- Labels for every vim foldmethod config table (:help foldmethod) and one
@@ -101,51 +104,57 @@ local function configure(config)
    -- Flag shows if only one global config table has been passed or
    -- several config tables for different foldmethods.
    local input_config_is_fdm_specific = false
+
    if got_input then
+      local extracted
+      config, extracted = util.tbl_deep_extract(config, 'ft_ignore')
+      for _, ft in ipairs(extracted) do M.ft_ignore[ft] = true end
+
       for _, fdm in ipairs(foldmethods) do
          if config[fdm] then
             input_config_is_fdm_specific = true
             break
          end
       end
-   end
 
-   -- Check if deprecated option lables was used.
-   if got_input then
-      local old = 'comment_signs'
-      local new = 'process_comment_signs'
-      local status = false
+      -- Check if deprecated option lables was used.
+      do -- Check if deprecated option lables was used.
+         local old = 'comment_signs'
+         local new = 'process_comment_signs'
+         local status = false
 
-      if input_config_is_fdm_specific then
-         for _, k in ipairs(vim.tbl_keys(config)) do
-            if vim.tbl_contains( vim.tbl_keys(config[k]), old)
-               and type(config[k][old]) == "string"
+         if input_config_is_fdm_specific then
+            for _, k in ipairs(vim.tbl_keys(config)) do
+               if vim.tbl_contains( vim.tbl_keys(config[k]), old)
+                  and type(config[k][old]) == "string"
+               then
+                  config[k][new], config[k][old] = config[k][old], nil
+                  status = true
+               end
+            end
+         else
+            if vim.tbl_contains( vim.tbl_keys(config), old)
+               and type(config[old]) == "string"
             then
-               config[k][new], config[k][old] = config[k][old], nil
+               config[new], config[old] = config[old], nil
                status = true
             end
          end
-      else
-         if vim.tbl_contains( vim.tbl_keys(config), old)
-            and type(config[old]) == "string"
-         then
-            config[new], config[old] = config[old], nil
-            status = true
+
+         if status then
+            util.warn(string.format(
+               '"%s" option was renamed to "%s". Please update your config to avoid errors in the future.',
+                old, new
+            ))
          end
       end
 
-      if status then
-         util.warn(string.format(
-            '"%s" option was renamed to "%s". Please update your config to avoid errors in the future.',
-             old, new
-         ))
+      if not input_config_is_fdm_specific then
+         config = { config }
       end
+   else
+      config = {{}}
    end
-
-   if got_input and not input_config_is_fdm_specific then
-      config = { config }
-   end
-   if not config[1] then config[1] = {} end
 
    for fdm, _ in pairs(config) do
       config[fdm] = setmetatable(config[fdm], {
@@ -172,7 +181,7 @@ function M.setup(config)
    vim.api.nvim_create_autocmd('BufWinEnter', {
       callback = function()
          local filetype = vim.bo.filetype
-         -- config.ft_ignore
+         if M.ft_ignore[filetype] then return end
          if M.foldtext[filetype] then
             vim.wo.foldtext = string.format("v:lua.require('pretty-fold').foldtext.%s()", filetype)
          else
