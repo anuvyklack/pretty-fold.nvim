@@ -14,7 +14,7 @@ Installation and setup example with [packer](https://github.com/wbthomason/packe
 ```lua
 use{ 'anuvyklack/pretty-fold.nvim',
    config = function()
-      require('pretty-fold').setup{}
+      require('pretty-fold').setup()
       require('pretty-fold.preview').setup()
    end
 }
@@ -22,11 +22,11 @@ use{ 'anuvyklack/pretty-fold.nvim',
 
 ## Foldtext configuration
 
-pretty-fold.nvim comes with the following defaults:
+Pretty-fold.nvim comes with the following defaults
+(the description of each option is below):
 
 ```lua
 config = {
-   fill_char = '•',
    sections = {
       left = {
          'content',
@@ -36,6 +36,7 @@ config = {
          function(config) return config.fill_char:rep(3) end
       }
    },
+   fill_char = '•',
 
    remove_fold_markers = true,
 
@@ -59,6 +60,11 @@ config = {
    add_close_pattern = true, -- true, 'last_line' or false
 
    matchup_patterns = {
+      { 'function%s*%(', 'end' }, -- 'function( or 'function (''
+      {  '{', '}' },
+      { '%(', ')' }, -- % to escape lua pattern char
+      { '%[', ']' }, -- % to escape lua pattern char
+
       { '^%s*do$', 'end' }, -- `do ... end` blocks
       { '^%s*if', 'end' },  -- if
       { '^%s*for', 'end' }, -- for
@@ -67,6 +73,8 @@ config = {
       { '%(', ')' }, -- % to escape lua pattern char
       { '%[', ']' }, -- % to escape lua pattern char
    },
+
+   ft_ignore = { 'neorg' },
 }
 ```
 
@@ -74,10 +82,10 @@ config = {
 
 The main part. Contains two tables: `config.sections.left` and
 `config.sections.right` which content will be left and right aligned
-respectively. Each of them can contain [service sections](#service-sections),
-strings and functions that return string.
+respectively.  Each of them can contain names of the
+[components](#built-in-components) and functions that returns string.
 
-#### Service sections
+#### Built-in components
 
 The strings from the table below will be expanded according to the table.
 
@@ -110,20 +118,24 @@ require('pretty-fold').setup {
 ![image](https://user-images.githubusercontent.com/13056013/149224663-aad3e2cd-411a-4a8d-b2a4-a821795dfade.png)
 
 ### `fill_char`
+**default**: `'•'`
 
 Character used to fill the space between the left and right sections.
 
 ### `remove_fold_markers`
+**default**: `true`
 
-Remove foldmarkers from the `content` section.
+Remove foldmarkers from the `content` component.
 
 ### `keep_indentation`
+**default**: `true`
 
 Keep the indentation of the content of the fold string.
 
 ### `process_comment_signs`
 
 What to do with comment signs:
+**default**: `spaces`
 
 | Option     | Description |
 | ---------- | ----------- |
@@ -132,6 +144,7 @@ What to do with comment signs:
 | `false`    | do nothing with comment signs |
 
 ### `comment_signs`
+**default**: `{}`
 
 Table with comment signs additional to the value of `&commentstring` option.
 Add additional comment signs only when you really need them.  Otherwise, they
@@ -153,12 +166,13 @@ comment_signs = { '//' }
 
 ### `stop_words`
 
+**default**: `'@brief%s*'` (for C++) Remove '@brief' and all spaces after.
+
 [Lua patterns](https://www.lua.org/manual/5.1/manual.html#5.4.1) that will be
 removed from the `content` section.
 
 ### `add_close_pattern`
-
-**Default:** `true`
+**default:** `true`
 
 If this option is set to `true` for all opening patterns that will be found in
 the first non-blank line of the folded region, all corresponding closing
@@ -181,31 +195,27 @@ close string which will be added if oppening pattern is found.
 Examples for lua (Lua patterns are explained with railroad diagrams):
 
 ```lua
-   matchup_patterns = {
-      --                   ╭────────────────╮
-      -- ╟─ Start of line ─╯─╭ whitespace ╮─╰─ "do" ── End of line ─╢
-      --                     ╰──── * ─────╯
-      { '^%s*do$', 'end' }, -- `do ... end` blocks
+matchup_patterns = {
+   -- ╟─ Start of line ──╭───────╮── "do" ── End of line ─╢
+   --                    ╰─ WSP ─╯
+   { '^%s*do$', 'end' }, -- `do ... end` blocks
 
-      --                   ╭────────────────╮
-      -- ╟─ Start of line ─╯─╭ whitespace ╮─╰─ "if" ─╢
-      --                     ╰──── * ─────╯
-      { '^%s*if', 'end' },  -- if
+   -- ╟─ Start of line ──╭───────╮── "if" ─╢
+   --                    ╰─ WSP ─╯
+   { '^%s*if', 'end' },
 
-      --                   ╭────────────────╮
-      -- ╟─ Start of line ─╯─╭ whitespace ╮─╰─ "for" ─╢
-      --                     ╰──── * ─────╯
-      { '^%s*for', 'end' }, -- for
+   -- ╟─ Start of line ──╭───────╮── "for" ─╢
+   --                    ╰─ WSP ─╯
+   { '^%s*for', 'end' },
 
-      --                ╭────────────────╮
-      -- ╟─ "function" ─╯─╭ whitespace ╮─╰─ "(" ─╢
-      --                  ╰──── * ─────╯
-      { 'function%s*%(', 'end' }, -- 'function(' or 'function ('
+   -- ╟─ "function" ──╭───────╮── "(" ─╢
+   --                 ╰─ WSP ─╯
+   { 'function%s*%(', 'end' }, -- 'function(' or 'function ('
 
-      { '{', '}' },
-      { '%(', ')' }, -- % to escape lua pattern char
-      { '%[', ']' }, -- % to escape lua pattern char
-   },
+   {  '{', '}' },
+   { '%(', ')' }, -- % to escape lua pattern char
+   { '%[', ']' }, -- % to escape lua pattern char
+},
 ```
 
 ![image](https://user-images.githubusercontent.com/13056013/148240635-6945810b-4a44-4d77-b136-ac2e2f062669.png)
@@ -226,58 +236,88 @@ If `process_comment_signs = 'spaces'` is set, the output will be
 
 ### Setup for particular filetype
 
+> :warning: **WARNING**: This functionality is available only in the
+> [nightly](https://github.com/anuvyklack/pretty-fold.nvim/tree/nightly)
+> branch.
+>
+> Due to the `foldtext` is a local to window option and for this functionality
+> we need it to work as local to buffer option, we have to set desired value
+> every time buffer in the window changed.
+>
+> For this the plugin need to set an autocommand. My research shown that only
+> the latest autocommands Lua API suites for this, but it available only in the
+> **Neovim 0.7-nightly**. When it will be released the nightly branch will
+> become default.
+>
+> To install the pretty-fold nightly branch with
+> [packer](https://github.com/wbthomason/packer.nvim) use next snippet:
+>
+> ```lua
+> use{ 'anuvyklack/pretty-fold.nvim',
+>    branch = 'nightly',
+>    ...
+> }
+> ```
+
 This plugin provides two setup functions.
 
-The first one
-```lua
-require('pretty-fold').setup(config: table)
-```
-sets global `foldtext` option.
+1) The first one setup configuration which will be used for all filetypes for
+   which you doesn't set their own configuration.
 
-But if you want to setup filetype specific `foldext` use the second one
+   ```lua
+   require('pretty-fold').setup(config: table)
+   ```
 
-```lua
-require('pretty-fold').ft_setup(filtype: string, config: table)
-```
+2) The second one allows to setup filetype specific configuration:
 
-This function should be called for every buffer of the desired filetype, but
-this plugin doesn't provide any autocommands to do this because Neovim (and
-Vim) has a much more convenient mechanism to do this: **`after/ftplugin` directory**.
+   ```lua
+   require('pretty-fold').ft_setup(filtype: string, config: table)
+   ```
 
-For example, to setup foldtext only for C++ files, add to the file (on Linux)
-
-```sh
-$HOME/.config/nvim/after/ftplugin/cpp.lua
-```
-
-the next content:
+#### Example of ready to use foldtext configuration only for lua files
 
 ```lua
-require('pretty-fold').ft_setup('cpp', {
-   stop_words = {
-      '@brief%s*', -- remove '@brief' and all spaces after from foldtext
+require('pretty-fold').ft_setup('lua', {
+   matchup_patterns = {
+      { '^%s*do$', 'end' }, -- do ... end blocks
+      { '^%s*if', 'end' },  -- if ... end
+      { '^%s*for', 'end' }, -- for
+      { 'function%s*%(', 'end' }, -- 'function( or 'function (''
+      {  '{', '}' },
+      { '%(', ')' }, -- % to escape lua pattern char
+      { '%[', ']' }, -- % to escape lua pattern char
    },
-   -- your other settings
-})
+}
 ```
+
+#### `ft_ignore` options
+**default:** `{ 'neorg' }`
+
+Filetypes to be ignored.
+
+`ft_ignore` is a unique option. It exists only in a single copy for all global
+and filetype specific configurations. You can pass it in any function
+(`setup()` or `ft_setup()`) and all this values will be collected in this one
+single value.
+
 
 ### Foldmethod specific configuration
 
-The pretty-fold.nvim plugin supports different configuration for different
+The pretty-fold.nvim plugin supports saparate configuration for different
 [foldmethods](https://neovim.io/doc/user/options.html#'foldmethod').
 For this pass the configuration table for a particular foldmethod as a value to
 the key named after foldmethod.
 
-It is allowed to have one unlabeled global config table for all foldmethods and
-tune only desired options in foldmethod specific config table. All options that
-don't have value in foldmethod config table will be taken from global config
+You can also pass `global` configuration table for all foldmethods and tune
+only desired options in foldmethod specific config table. All options that
+don't have value in foldmethod config table will be taken from `global` config
 table.
 
 Example:
 
 ```lua
 require('pretty-fold').setup({
-    {...}, -- global config table for all Foldmethods
+    global = {...}, -- global config table for all foldmethods
     marker = { process_comment_signs = 'spaces' },
     expr   = { process_comment_signs = false },
 })
@@ -317,7 +357,7 @@ require('pretty-fold').setup{
 
 ![image](https://user-images.githubusercontent.com/13056013/148228526-980c62fa-71d2-40d0-b91b-439528e8cbce.png)
 
-#### For C++ to get nice foldtext for Doxygen comments
+#### Configuration for C++ to get nice foldtext for Doxygen comments
 
 ```lua
 require('pretty-fold').ft_setup('cpp', {
@@ -326,8 +366,8 @@ require('pretty-fold').ft_setup('cpp', {
       '/**', -- C++ Doxygen comments
    },
    stop_words = {
-      -- ╟─ "*" ──╭──────────────╮── "@brief" ──╭──────────────╮──╢
-      --          ╰─ whitespace ─╯              ╰─ whitespace ─╯
+      -- ╟─ "*" ──╭───────╮── "@brief" ──╭───────╮──╢
+      --          ╰─ WSP ─╯              ╰─ WSP ─╯
       '%*%s*@brief%s*',
    },
 })
