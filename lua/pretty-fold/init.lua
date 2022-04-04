@@ -73,10 +73,10 @@ local function fold_text(config)
 
    local r = { left = {}, right = {} }
 
-   -- Get the text of all sections of the fold string.
+   -- Get the text of all components of the fold string.
    for _, lr in ipairs({'left', 'right'}) do
-      for _, s in ipairs(config.sections[lr] or {}) do
-         local sec = require('pretty-fold.sections')[s]
+      for _, sec in ipairs(config.sections[lr] or {}) do
+         sec = require('pretty-fold.components')[sec]
          table.insert(r[lr], vim.is_callable(sec) and sec(config) or sec)
       end
    end
@@ -88,7 +88,7 @@ local function fold_text(config)
 
    local visible_win_width = api.nvim_win_get_width(0) - gutter_width
 
-   -- The summation length of all sections of the fold text string.
+   -- The summation length of all components of the fold text string.
    local fold_text_len = fn.strdisplaywidth( table.concat( vim.tbl_flatten( vim.tbl_values(r) )))
 
    r.expansion_str = string.rep(config.fill_char, visible_win_width - fold_text_len)
