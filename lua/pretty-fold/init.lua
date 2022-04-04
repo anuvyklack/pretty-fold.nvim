@@ -12,10 +12,13 @@ local M = {
    },
 }
 
--- Labels for every vim foldmethod config table (:help foldmethod) and one
--- general config unlabeled table (accessible with config[1]) to seek into if
--- no value was found in foldmethod specific config table.
-local foldmethods = { 1, 'manual', 'indent', 'expr', 'marker', 'syntax', 'diff' }
+-- Labels for each vim foldmethod (:help foldmethod) configuration table and one
+-- global configuration table, to look for missing keys if the key is not found
+-- in a particular foldmethod configuration table.
+local foldmethods = {
+   'global', -- One global config table for all foldmethods to look missing keys into.
+   'manual', 'indent', 'expr', 'marker', 'syntax', 'diff'
+}
 
 local default_config = {
    fill_char = '•',
@@ -101,42 +104,36 @@ local function configure(config)
    -- Flag indicating whether current function got a non-empty parameter.
    local got_input = config and not vim.tbl_isempty(config) and true or false
 
-   -- Flag shows if only one global config table has been passed or
-   -- several config tables for different foldmethods.
-   local input_config_is_fdm_specific = false
-
    if got_input then
       local extracted
       config, extracted = util.tbl_deep_extract(config, 'ft_ignore')
       for _, ft in ipairs(extracted) do M.ft_ignore[ft] = true end
 
+      -- Flag shows if only one global config table has been passed or
+      -- several config tables for different foldmethods.
+      local input_config_is_fdm_specific = false
       for _, fdm in ipairs(foldmethods) do
          if config[fdm] then
             input_config_is_fdm_specific = true
             break
          end
       end
+      if input_config_is_fdm_specific then
+         config.global, config[1] = config[1], nil
+      else
+         config = { global = config }
+      end
 
       -- Check if deprecated option lables was used.
-      do -- Check if deprecated option lables was used.
+      do -- Check if deprecated option lables were used.
          local old = 'comment_signs'
          local new = 'process_comment_signs'
          local status = false
 
-         if input_config_is_fdm_specific then
-            for _, k in ipairs(vim.tbl_keys(config)) do
-               if vim.tbl_contains( vim.tbl_keys(config[k]), old)
-                  and type(config[k][old]) == "string"
-               then
-                  config[k][new], config[k][old] = config[k][old], nil
-                  status = true
-               end
-            end
-         else
-            if vim.tbl_contains( vim.tbl_keys(config), old)
-               and type(config[old]) == "string"
+         for _, k in ipairs(vim.tbl_keys(config)) do
+            if config[k][old] and type(config[k][old]) == "string"
             then
-               config[new], config[old] = config[old], nil
+               config[k][new], config[k][old] = config[k][old], nil
                status = true
             end
          end
@@ -148,23 +145,19 @@ local function configure(config)
             ))
          end
       end
-
-      if not input_config_is_fdm_specific then
-         config = { config }
-      end
    else
-      config = {{}}
+      config = { global = {} }
    end
 
    for fdm, _ in pairs(config) do
       config[fdm] = setmetatable(config[fdm], {
-         __index = (fdm == 1) and default_config or config[1]
+         __index = (fdm == 'global') and default_config or config.global
       })
    end
 
    config = setmetatable(config, {
       __index = function(self, _)
-         return self[1]
+         return self.global
       end
    })
 
