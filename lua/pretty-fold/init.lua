@@ -3,13 +3,12 @@ local util = require("pretty-fold.util")
 local wo = vim.wo
 local fn = vim.fn
 local api = vim.api
+
 ffi.cdef('int curwin_col_off(void);')
 
 local M = {
    foldtext = {}, -- Table with all 'foldtext' functions.
-   ft_ignore = { -- set with filetypes to be ignored
-      neorg = true
-   },
+   ft_ignore = {} -- Set with filetypes to be ignored.
 }
 
 -- Labels for each vim foldmethod (:help foldmethod) configuration table and one
@@ -63,7 +62,11 @@ local default_config = {
       { '%(', ')' }, -- % to escape lua pattern char
       { '%[', ']' }, -- % to escape lua pattern char
    },
+
+   ft_ignore = { 'neorg' }
 }
+
+for _, ft in ipairs(default_config.ft_ignore) do M.ft_ignore[ft] = true end
 
 -- The main function which produses the string which will be shown
 -- in the fold line.
@@ -105,10 +108,6 @@ local function configure(config)
    local got_input = config and not vim.tbl_isempty(config) and true or false
 
    if got_input then
-      local extracted
-      config, extracted = util.tbl_deep_extract(config, 'ft_ignore')
-      for _, ft in ipairs(extracted) do M.ft_ignore[ft] = true end
-
       -- Flag shows if only one global config table has been passed or
       -- several config tables for different foldmethods.
       local input_config_is_fdm_specific = false
@@ -122,6 +121,16 @@ local function configure(config)
          config.global, config[1] = config[1], nil
       elseif not input_config_is_fdm_specific then
          config = { global = config }
+      end
+
+      -- Sort out with ft_ignore option.
+      for fdm, _ in pairs(config) do
+         if config[fdm].ft_ignore then
+            for _, ft in ipairs(config[fdm].ft_ignore) do
+               M.ft_ignore[ft] = true
+            end
+            config[fdm].ft_ignore = nil
+         end
       end
 
       -- Check if deprecated option lables was used.
@@ -150,12 +159,12 @@ local function configure(config)
    end
 
    for fdm, _ in pairs(config) do
-      config[fdm] = setmetatable(config[fdm], {
+      setmetatable(config[fdm], {
          __index = (fdm == 'global') and default_config or config.global
       })
    end
 
-   config = setmetatable(config, {
+   setmetatable(config, {
       __index = function(self, _)
          return self.global
       end

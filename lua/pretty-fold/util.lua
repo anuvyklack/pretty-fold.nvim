@@ -8,28 +8,6 @@ function util.warn(msg)
    end)
 end
 
----Deep extract all values under desired key from all of nested tables into
----separate list and remove them from original table.
----@param tbl table table to extract from
----@param key_to_extr string key which values to extract
----@return table tbl table from which key were extracted
----@return list extracted list with all extracted values
-function util.tbl_deep_extract(tbl, key_to_extr)
-   local extracted = {}
-   if tbl[key_to_extr] then
-      extracted = vim.list_extend(extracted, tbl[key_to_extr])
-      tbl[key_to_extr] = nil
-   end
-   for key, _ in pairs(tbl) do
-      if type(tbl[key]) == "table" then
-         local temp
-         tbl[key], temp = util.tbl_deep_extract(tbl[key], key_to_extr)
-         vim.list_extend(extracted, temp)
-      end
-   end
-   return tbl, extracted
-end
-
 ---Raise a warning if an old option label was used and replace it with a new one.
 ---@param config table
 ---@param config_is_fdm_specific boolean
