@@ -7,14 +7,16 @@ local api = vim.api
 ffi.cdef('int curwin_col_off(void);')
 
 local M = {
-   ---Table with all 'foldtext' functions.
-   foldtext = {}
+   foldtext = {} ---Table with all 'foldtext' functions.
 }
 
--- Labels for every vim foldmethod config table (:help foldmethod) and one
--- general config unlabeled table (accessible with config[1]) to seek into if
--- no value was found in foldmethod specific config table.
-local foldmethods = { 1, 'manual', 'indent', 'expr', 'marker', 'syntax', 'diff' }
+-- Labels for each vim foldmethod (:help foldmethod) configuration table and one
+-- global configuration table, to look for missing keys if the key is not found
+-- in a particular foldmethod configuration table.
+local foldmethods = {
+   'global', -- One global config table for all foldmethods to look missing keys into.
+   'manual', 'indent', 'expr', 'marker', 'syntax', 'diff'
+}
 
 local default_config = {
    fill_char = '•',
@@ -87,61 +89,66 @@ local function fold_text(config)
    return table.concat( vim.tbl_flatten({r.left, r.expansion_str, r.right}) )
 end
 
-local function configure_fold_text(input_config)
-   local input_config_is_fdm_specific = false
-   if input_config then
-      for _, v in ipairs(foldmethods) do
-         if input_config[v] then
+---Make a ready to use config table with all keys for all foldmethos from the
+---default config table -and input config table.
+---@param config? table
+---@return table
+local function configure(config)
+   -- Flag indicating whether current function got a non-empty parameter.
+   local got_input = config and not vim.tbl_isempty(config) and true or false
+
+   if got_input then
+      -- Flag shows if only one global config table has been passed or
+      -- several config tables for different foldmethods.
+      local input_config_is_fdm_specific = false
+      for _, fdm in ipairs(foldmethods) do
+         if config[fdm] then
             input_config_is_fdm_specific = true
             break
          end
       end
-   end
+      if not config.global and config[1] and input_config_is_fdm_specific then
+         config.global, config[1] = config[1], nil
+      elseif not input_config_is_fdm_specific then
+         config = { global = config }
+      end
 
-   do -- Check if deprecated option lables was used.
-      local old = 'comment_signs'
-      local new = 'process_comment_signs'
-      local status = false
+      -- Check if deprecated option lables was used.
+      do -- Check if deprecated option lables were used.
+         local old = 'comment_signs'
+         local new = 'process_comment_signs'
+         local status = false
 
-      if input_config_is_fdm_specific then
-         for _, k in ipairs(vim.tbl_keys(input_config)) do
-            if vim.tbl_contains( vim.tbl_keys(input_config[k]), old)
-               and type(input_config[k][old]) == "string"
+         for _, k in ipairs(vim.tbl_keys(config)) do
+            if config[k][old] and type(config[k][old]) == "string"
             then
-               input_config[k][new], input_config[k][old] = input_config[k][old], nil
+               config[k][new], config[k][old] = config[k][old], nil
                status = true
             end
          end
-      else
-         if vim.tbl_contains( vim.tbl_keys(input_config), old)
-            and type(input_config[old]) == "string"
-         then
-            input_config[new], input_config[old] = input_config[old], nil
-            status = true
+
+         if status then
+            util.warn(string.format(
+               '"%s" option was renamed to "%s". Please update your config to avoid errors in the future.',
+                old, new
+            ))
          end
       end
+   else
+      config = { global = {} }
+   end
 
-      if status then
-         util.warn( string.format(
-            '"%s" option was renamed to "%s". Please update your config to avoid errors in the future.',
-             old, new
-         ))
+   for fdm, _ in pairs(config) do
+      setmetatable(config[fdm], {
+         __index = (fdm == 'global') and default_config or config.global
+      })
+   end
+
+   setmetatable(config, {
+      __index = function(self, _)
+         return self.global
       end
-   end
-
-   local config = {}
-   for _, fdm in ipairs(foldmethods) do config[fdm] = {} end
-
-   if input_config_is_fdm_specific then
-      config = vim.tbl_deep_extend('force', config, input_config)
-   elseif input_config then
-      config[1] = vim.tbl_deep_extend('force', config[1], input_config)
-   end
-
-   for _, fdm in ipairs(foldmethods) do
-      config[fdm] = setmetatable(config[fdm],
-         { __index = (fdm == 1) and default_config or config[1] })
-   end
+   })
 
    return config
 end
@@ -149,9 +156,9 @@ end
 -- Setup the global 'foldtext' vim option.
 ---@param config table
 function M.setup(config)
-   config = configure_fold_text(config or {})
+   config = configure(config or {})
    M.foldtext.global = function() return fold_text(config) end
-   vim.opt.foldtext = 'v:lua.require("pretty-fold").foldtext.global()'
+   vim.o.foldtext = 'v:lua.require("pretty-fold").foldtext.global()'
 end
 
 -- Setup the filetype specific window local 'foldtext' vim option.
