@@ -9,6 +9,7 @@ ffi.cdef('int curwin_col_off(void);')
 local M = {
    foldtext = {}, -- Table with all 'foldtext' functions.
    ft_ignore = {} -- Set with filetypes to be ignored.
+   -- config = {}
 }
 
 -- Labels for each vim foldmethod (:help foldmethod) configuration table and one
@@ -177,6 +178,7 @@ end
 ---@param config table
 function M.setup(config)
    config = configure(config)
+   -- M.config.global = config
    M.foldtext.global = function() return fold_text(config) end
    vim.o.foldtext = 'v:lua.require("pretty-fold").foldtext.global()'
 
@@ -199,6 +201,7 @@ end
 function M.ft_setup(filetype, config)
    if not M.foldtext[filetype] then
       config = configure(config)
+      -- M.config[filetype] = config
       M.foldtext[filetype] = function() return fold_text(config) end
    end
 end
