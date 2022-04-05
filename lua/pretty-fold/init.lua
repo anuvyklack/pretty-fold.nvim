@@ -118,9 +118,9 @@ local function configure(config)
             break
          end
       end
-      if input_config_is_fdm_specific then
+      if not config.global and config[1] and input_config_is_fdm_specific then
          config.global, config[1] = config[1], nil
-      else
+      elseif not input_config_is_fdm_specific then
          config = { global = config }
       end
 
