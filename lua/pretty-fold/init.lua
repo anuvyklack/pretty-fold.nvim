@@ -169,7 +169,7 @@ local function configure(config)
    return config
 end
 
--- Setup the global 'foldtext' vim option.
+-- Setup global configuration.
 ---@param config table
 function M.setup(config)
    config = configure(config)
@@ -190,7 +190,7 @@ function M.setup(config)
    })
 end
 
--- Setup the filetype specific window local 'foldtext' vim option.
+-- Setup filetype specific configuration.
 ---@param filetype string
 ---@param config table
 function M.ft_setup(filetype, config)
