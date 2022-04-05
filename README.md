@@ -189,7 +189,11 @@ Examples for lua (Lua patterns are explained with railroad diagrams):
 matchup_patterns = {
    -- ╟─ Start of line ──╭───────╮── "do" ── End of line ─╢
    --                    ╰─ WSP ─╯
-   { '^%s*do$', 'end' }, -- `do ... end` blocks
+   { '^%s*do$', 'end' }, -- "do ... end" blocks
+
+   -- ╟─ Start of line ──╭───────╮── "do" ──╭───────╮ ─╢
+   --                    ╰─ WSP ─╯          ╰─ WSP ─╯
+   { '^%s*do%s', 'end' }, -- "do ... end" blocks with comment
 
    -- ╟─ Start of line ──╭───────╮── "if" ─╢
    --                    ╰─ WSP ─╯
@@ -201,7 +205,7 @@ matchup_patterns = {
 
    -- ╟─ "function" ──╭───────╮── "(" ─╢
    --                 ╰─ WSP ─╯
-   { 'function%s*%(', 'end' }, -- 'function(' or 'function ('
+   { 'function%s*%(', 'end' }, -- "function(" or "function ("
 
    {  '{', '}' },
    { '%(', ')' }, -- % to escape lua pattern char
@@ -270,10 +274,11 @@ This plugin provides two setup functions.
 ```lua
 require('pretty-fold').ft_setup('lua', {
    matchup_patterns = {
-      { '^%s*do$', 'end' }, -- do ... end blocks
-      { '^%s*if', 'end' },  -- if ... end
-      { '^%s*for', 'end' }, -- for
-      { 'function%s*%(', 'end' }, -- 'function( or 'function (''
+      { '^%s*do$', 'end' },  -- do ... end blocks
+      { '^%s*do%s', 'end' }, -- do ... end blocks with comment
+      { '^%s*if', 'end' },   -- if ... end
+      { '^%s*for', 'end' },  -- for
+      { 'function%s*%(', 'end' }, -- 'function(' or 'function ('
       {  '{', '}' },
       { '%(', ')' }, -- % to escape lua pattern char
       { '%[', ']' }, -- % to escape lua pattern char
