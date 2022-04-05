@@ -60,16 +60,7 @@ config = {
    add_close_pattern = true, -- true, 'last_line' or false
 
    matchup_patterns = {
-      { 'function%s*%(', 'end' }, -- 'function( or 'function (''
       {  '{', '}' },
-      { '%(', ')' }, -- % to escape lua pattern char
-      { '%[', ']' }, -- % to escape lua pattern char
-
-      { '^%s*do$', 'end' }, -- `do ... end` blocks
-      { '^%s*if', 'end' },  -- if
-      { '^%s*for', 'end' }, -- for
-      { 'function%s*%(', 'end' }, -- 'function(' or 'function ('
-      { '{', '}' },
       { '%(', ')' }, -- % to escape lua pattern char
       { '%[', ']' }, -- % to escape lua pattern char
    },
