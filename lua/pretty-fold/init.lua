@@ -153,7 +153,7 @@ local function configure(config)
    return config
 end
 
--- Setup the global 'foldtext' vim option.
+-- Setup global configuration.
 ---@param config table
 function M.setup(config)
    config = configure(config or {})
@@ -161,9 +161,7 @@ function M.setup(config)
    vim.o.foldtext = 'v:lua.require("pretty-fold").foldtext.global()'
 end
 
--- Setup the filetype specific window local 'foldtext' vim option.
----@param filetype string
----@param config table
+-- Setup filetype specific configuration.
 function M.ft_setup()
    util.warn('ft_setup() function was moved to nightly branch. See README: "Setup for particular filetype"')
 end
