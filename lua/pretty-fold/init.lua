@@ -164,12 +164,8 @@ end
 -- Setup the filetype specific window local 'foldtext' vim option.
 ---@param filetype string
 ---@param config table
-function M.ft_setup(filetype, config)
-   if not M.foldtext[filetype] then
-      config = configure_fold_text(config)
-      M.foldtext[filetype] = function() return fold_text(config) end
-   end
-   wo.foldtext = string.format("v:lua.require('pretty-fold').foldtext.%s()", filetype)
+function M.ft_setup()
+   util.warn('ft_setup() function was moved to nightly branch. See README: "Setup for particular filetype"')
 end
 
 return M
