@@ -54,11 +54,6 @@ local default_config = {
 
    add_close_pattern = true, -- true, 'last_line' or false
    matchup_patterns = {
-      -- beginning of the line -> any number of spaces -> 'do' -> end of the line
-      { '^%s*do$', 'end' }, -- `do ... end` blocks
-      { '^%s*if', 'end' },  -- if ... end
-      { '^%s*for', 'end' }, -- for
-      { 'function%s*%(', 'end' }, -- 'function( or 'function (''
       { '{', '}' },
       { '%(', ')' }, -- % to escape lua pattern char
       { '%[', ']' }, -- % to escape lua pattern char
