@@ -11,8 +11,6 @@ function M.content(config)
    ---The content of the 'content' section.
    ---@type string
    local content = fn.getline(v.foldstart)
-   -- local content = "-- use { 'easymotion', --{{{"
-   -- local content = "-- use { 'easymotion',"
 
    local filetype = vim.bo.filetype
 
@@ -84,7 +82,9 @@ function M.content(config)
       cache.lua_patterns.str_with_only_comment_token = {}
 
       -- Comment token at the beggining of the line
-      cache.lua_patterns.comment_token_as_start = {}
+      cache.lua_patterns.comment_token_at_start = {}
+
+      cache.lua_patterns.comment_token_at_eol = {}
 
       for _, token in ipairs(comment_tokens.escaped) do
          token = token[1] or token
@@ -94,8 +94,12 @@ function M.content(config)
             table.concat{ '^%s*', token, '%s*$' }
          )
          table.insert(
-            cache.lua_patterns.comment_token_as_start,
-            table.concat{'^', token, '%s*'}
+            cache.lua_patterns.comment_token_at_start,
+            table.concat{ '^', token, '%s*' }
+         )
+         table.insert(
+            cache.lua_patterns.comment_token_at_eol,
+            table.concat{ token, '%s*$'}
          )
       end
 
@@ -108,6 +112,10 @@ function M.content(config)
          cache.lua_patterns[fmr] = table.concat{ '%s?', vim.pesc(fmr), '%d*' }
       end
       content = content:gsub(cache.lua_patterns[fmr], '')
+
+      for _, pattern in ipairs(cache.lua_patterns.comment_token_at_eol) do
+         content = content:gsub(pattern, '')
+      end
    end
 
    -- If after removimg fold markers and comment signs we get blank line,
@@ -133,7 +141,7 @@ function M.content(config)
          else
             content = content:gsub('%s+$', '')
             local add_line = vim.trim(fn.getline(line_num))
-            for _, pattern in ipairs(cache.lua_patterns.comment_token_as_start) do
+            for _, pattern in ipairs(cache.lua_patterns.comment_token_at_start) do
                add_line = add_line:gsub(pattern, '')
             end
             content = table.concat({ content, ' ', add_line })
@@ -238,12 +246,6 @@ function M.content(config)
          end
 
          if closing_comment_str then
-            for _, pattern in ipairs(cache.lua_patterns.str_with_only_comment_token) do
-               if closing_comment_str:find(pattern) then
-                  closing_comment_str = nil
-                  break
-               end
-            end
             table.insert(str, closing_comment_str)
          end
 
