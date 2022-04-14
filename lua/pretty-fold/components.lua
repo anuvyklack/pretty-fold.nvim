@@ -11,8 +11,6 @@ function M.content(config)
    ---The content of the 'content' section.
    ---@type string
    local content = fn.getline(v.foldstart)
-   -- local content = "-- use { 'easymotion', --{{{"
-   -- local content = "-- use { 'easymotion',"
 
    local filetype = vim.bo.filetype
 
@@ -56,22 +54,19 @@ function M.content(config)
    if not cache.regex then
       cache.regex = {}
 
-      -- List of regexes for seeking comment substring at the end of line.
-      cache.regex.comment_substr_at_eol = {}
+      -- List of regexes for seeking all comment tokens at the beggining of the line.
+      cache.regex.all_comment_tokens_at_start = {}
 
       for i = 1, #comment_tokens.raw do
          local token = comment_tokens.raw[i][1] or comment_tokens.raw[i]
 
          -- token: '--'
-         -- regex: \M^\@!\s\*--\s\*\(\(--\)\@!\.\)\*$
+         -- regex: \M^\%(\s\*--\s\*\)\*$
          -- Example of what this is for:
          -- 'test( -- comment'     ->  '-- comment'
-         -- '-- test( -- comment'  ->  '-- comment'
-         -- but not match
-         -- '-- test('  ->  nil
          table.insert(
-            cache.regex.comment_substr_at_eol,
-            vim.regex(table.concat{ [[\M^\@!\s\*]], token, [[\s\*\(\(]], token, [[\)\@!\.\)\*$]] })
+            cache.regex.all_comment_tokens_at_start,
+            vim.regex(table.concat{ [[\M^\%(\s\*]], token, [[\s\*\)\*]] })
          )
       end
    end
@@ -84,7 +79,10 @@ function M.content(config)
       cache.lua_patterns.str_with_only_comment_token = {}
 
       -- Comment token at the beggining of the line
-      cache.lua_patterns.comment_token_as_start = {}
+      cache.lua_patterns.comment_token_at_start = {}
+
+      cache.lua_patterns.comment_token_at_eol = {}
+      cache.lua_patterns.comment_substring_at_eol = {}
 
       for _, token in ipairs(comment_tokens.escaped) do
          token = token[1] or token
@@ -94,8 +92,16 @@ function M.content(config)
             table.concat{ '^%s*', token, '%s*$' }
          )
          table.insert(
-            cache.lua_patterns.comment_token_as_start,
-            table.concat{'^', token, '%s*'}
+            cache.lua_patterns.comment_token_at_start,
+            table.concat{ '^', token, '%s*' }
+         )
+         table.insert(
+            cache.lua_patterns.comment_token_at_eol,
+            table.concat{ token, '%s*$' }
+         )
+         table.insert(
+            cache.lua_patterns.comment_substring_at_eol,
+            table.concat{ '%s*', token, '.*$' }
          )
       end
 
@@ -108,6 +114,10 @@ function M.content(config)
          cache.lua_patterns[fmr] = table.concat{ '%s?', vim.pesc(fmr), '%d*' }
       end
       content = content:gsub(cache.lua_patterns[fmr], '')
+
+      for _, pattern in ipairs(cache.lua_patterns.comment_token_at_eol) do
+         content = content:gsub(pattern, '')
+      end
    end
 
    -- If after removimg fold markers and comment signs we get blank line,
@@ -133,7 +143,7 @@ function M.content(config)
          else
             content = content:gsub('%s+$', '')
             local add_line = vim.trim(fn.getline(line_num))
-            for _, pattern in ipairs(cache.lua_patterns.comment_token_as_start) do
+            for _, pattern in ipairs(cache.lua_patterns.comment_token_at_start) do
                add_line = add_line:gsub(pattern, '')
             end
             content = table.concat({ content, ' ', add_line })
@@ -221,11 +231,26 @@ function M.content(config)
          local closing_comment_str
 
          for i = 1, #comment_tokens.raw do
-            local regex = cache.regex.comment_substr_at_eol[i]
+            local regex = cache.regex.all_comment_tokens_at_start[i]
+
+            -- The content string with all comment tokens stripped from the
+            -- beginning of the line.
+            local striped_content = content
+            -- Stripped comment tokens.
+            local opening_comment_tokens = ''
+
             local start, stop = regex:match_str(content)
             if start then
-               closing_comment_str = content:sub(start + 1, stop)
-               content = content:sub(0, start)
+               opening_comment_tokens = content:sub(start + 1, stop)
+               striped_content = content:sub(stop + 1)
+            end
+
+            local pattern = cache.lua_patterns.comment_substring_at_eol[i]
+            start = striped_content:find(pattern)
+
+            if start then
+               closing_comment_str = striped_content:sub(start)
+               content = content:sub(1, #opening_comment_tokens + start - 1)
                break
             end
          end
@@ -238,12 +263,6 @@ function M.content(config)
          end
 
          if closing_comment_str then
-            for _, pattern in ipairs(cache.lua_patterns.str_with_only_comment_token) do
-               if closing_comment_str:find(pattern) then
-                  closing_comment_str = nil
-                  break
-               end
-            end
             table.insert(str, closing_comment_str)
          end
 
