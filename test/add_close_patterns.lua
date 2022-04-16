@@ -4,6 +4,10 @@ function M.telescope() --{{{
 
 end --}}}
 
+require('packer').init { --{{{
+
+} --}}}
+
 -- use { 'vim-ctrlspace/vim-ctrlspace', --{{{
 
 -- } --}}}

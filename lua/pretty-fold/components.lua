@@ -50,8 +50,8 @@ function M.content(config)
    local comment_tokens = cache.comment_tokens
 
    -- Make cache for regexes.
-   -- See ':help /\M'
    if not cache.regex then
+      -- See ':help /\M'
       cache.regex = {}
 
       -- List of regexes for seeking all comment tokens at the beggining of the line.
@@ -97,7 +97,7 @@ function M.content(config)
          )
          table.insert(
             cache.lua_patterns.comment_token_at_eol,
-            table.concat{ token, '%s*$' }
+            table.concat{ '%s*', token, '%s*$' }
          )
          table.insert(
             cache.lua_patterns.comment_substring_at_eol,
@@ -122,31 +122,33 @@ function M.content(config)
 
    -- If after removimg fold markers and comment signs we get blank line,
    -- take next nonblank.
-   local blank = content:match('^%s*$') and true or false
+   do
+      local blank = content:match('^%s*$') and true or false
 
-   -- Check if content string consists only of comment sign.
-   local only_comment_sign = false
-   if not blank then
-      for _, pattern in ipairs(cache.lua_patterns.str_with_only_comment_token) do
-         if content:match(pattern) then
-            only_comment_sign = true
-            break
+      -- Check if content string consists only of comment sign.
+      local only_comment_sign = false
+      if not blank then
+         for _, pattern in ipairs(cache.lua_patterns.str_with_only_comment_token) do
+            if content:match(pattern) then
+               only_comment_sign = true
+               break
+            end
          end
       end
-   end
 
-   if blank or only_comment_sign then
-      local line_num = fn.nextnonblank(v.foldstart + 1)
-      if line_num ~= 0 and line_num <= v.foldend then
-         if config.process_comment_signs or blank then
-            content = fn.getline(line_num)
-         else
-            content = content:gsub('%s+$', '')
-            local add_line = vim.trim(fn.getline(line_num))
-            for _, pattern in ipairs(cache.lua_patterns.comment_token_at_start) do
-               add_line = add_line:gsub(pattern, '')
+      if blank or only_comment_sign then
+         local line_num = fn.nextnonblank(v.foldstart + 1)
+         if line_num ~= 0 and line_num <= v.foldend then
+            if config.process_comment_signs or blank then
+               content = fn.getline(line_num)
+            else
+               content = content:gsub('%s+$', '')
+               local add_line = vim.trim(fn.getline(line_num))
+               for _, pattern in ipairs(cache.lua_patterns.comment_token_at_start) do
+                  add_line = add_line:gsub(pattern, '')
+               end
+               content = table.concat({ content, ' ', add_line })
             end
-            content = table.concat({ content, ' ', add_line })
          end
       end
    end
