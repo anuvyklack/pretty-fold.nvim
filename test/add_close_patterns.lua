@@ -8,6 +8,10 @@ require('packer').init { --{{{
 
 } --}}}
 
+local extend = function(opts) -- {{{
+
+end -- }}}
+
 -- use { 'vim-ctrlspace/vim-ctrlspace', --{{{
 
 -- } --}}}

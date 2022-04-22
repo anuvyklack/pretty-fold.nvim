@@ -172,17 +172,27 @@ function M.content(config)
          while stop do
             start, stop = str:find(pat[1], stop + 1)
             if start then
-               table.insert(found, { start = start, stop = stop, pat = pat[1] })
+               table.insert(found, { start = start, stop = stop,
+                                     pat = pat[1], oppening = true })
             end
+         end
+
+         for _, f in ipairs(found) do
+            str = table.concat {
+               str:sub(1, f.start - 1),
+               string.rep('Q', f.stop - f.start + 1),
+               str:sub(f.stop + 1)
+            }
          end
 
          local num_op = #found  -- number of opening patterns
          if num_op > 0 then
             start, stop = nil, 0
             while stop do
-               start, stop = str:find(pat[2], stop + 1)
+               start, stop = str:find(vim.pesc(pat[2]), stop + 1)
                if start then
-                  table.insert(found, { start = start, stop = stop, pat = pat[2] })
+                  table.insert(found, { start = start, stop = stop,
+                                        pat = pat[2], oppening = false })
                end
                -- If number of closing patterns become equal to number of openning
                -- patterns, then break.
@@ -194,14 +204,6 @@ function M.content(config)
             table.sort(found, function(a, b)
                return a.start < b.start and true or false
             end)
-
-            local str_parts = {}
-            table.insert(str_parts, str:sub(1, found[1].start - 1))
-            for i = 1, #found - 1 do
-               table.insert(str_parts, str:sub(found[i].stop + 1, found[i+1].start - 1))
-            end
-            table.insert(str_parts, str:sub(found[#found].stop + 1))
-            str = table.concat(str_parts, ' ')
 
             ---previous, current, next
             local p, c, n = nil, 1, 2
@@ -222,12 +224,22 @@ function M.content(config)
          end
 
          for _, f in ipairs(found) do
-            table.insert(found_patterns, { pat = pat, pos = f.start })
+            table.insert(found_patterns,
+               { pat = pat, pos = f.start, oppening = f.oppening })
          end
       end
+
       table.sort(found_patterns, function(a, b)
          return a.pos < b.pos and true or false
       end)
+
+      while true do
+         if found_patterns[1] and not found_patterns[1].oppening then
+            table.remove(found_patterns, 1)
+         else
+            break
+         end
+      end
 
       if not vim.tbl_isempty(found_patterns) then
          local closing_comment_str
