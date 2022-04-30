@@ -1,3 +1,5 @@
+local warn = require("pretty-fold.util").warn
+local available, keymap_amend = pcall(require, 'keymap-amend')
 local api = vim.api
 local bo = vim.bo
 local wo = vim.wo
@@ -8,12 +10,22 @@ local M = {}
 M.service_functions = {}
 
 M.config = {
-   key = 'h', -- Only 'h' or 'l' keys are supported.
+   default_keybindings = true,
    border = {' ', '', ' ', ' ', ' ', ' ', ' ', ' '},
 }
 
 ---@param config table
 function M.setup(config)
+   if vim.fn.has('nvim-0.7') ~= 1 then
+      warn('Neovim v0.7 or higher is required')
+      return
+   end
+
+   if not available then
+      warn('the "anuvyklack/nvim-keymap-amend" plugin is required for key mappings to working')
+      return
+   end
+
    M.config = vim.tbl_deep_extend('force', M.config, config or {})
    config = M.config
 
@@ -37,14 +49,13 @@ function M.setup(config)
       assert(false, 'Invalid border type or value')
    end
 
-   if M.config.key then
-      local key = M.config.key
-      assert(key == 'h' or key == 'l', "Only 'h' or 'l' keys are supported!")
-      local second_key = key == 'h' and 'l' or 'h'
-
-      g.fold_preview_cocked = true
-      vim.keymap.set('n', key,        function() M.keymap_open_close(key)   end)
-      vim.keymap.set('n', second_key, function() M.keymap_close(second_key) end)
+   g.fold_preview_cocked = true
+   if M.config.default_keybindings then
+      keymap_amend('n', 'h',  M.mapping.show_close_preview_open_fold)
+      keymap_amend('n', 'l',  M.mapping.close_preview_open_fold)
+      keymap_amend('n', 'zo', M.mapping.close_preview)
+      keymap_amend('n', 'zO', M.mapping.close_preview)
+      keymap_amend('n', 'zc', M.mapping.close_preview)
    end
 end
 
@@ -168,7 +179,14 @@ function M.show_preview()
 
 end
 
-function M.keymap_open_close(key)
+
+---Functions in this table are meant to be used with the next plugin:
+--https://github.com/anuvyklack/nvim-keymap-amend
+M.mapping = {}
+
+---Show preview or close preview and open fold or execute original mapping.
+---@param original function
+function M.mapping.show_close_preview_open_fold(original)
    if fn.foldclosed('.') ~= -1 and g.fold_preview_cocked then
       g.fold_preview_cocked = false
       M.show_preview()
@@ -179,11 +197,13 @@ function M.keymap_open_close(key)
          vim.defer_fn(M.service_functions.close, 1)
       end
    else
-      api.nvim_command('normal! '..vim.v.count1..key)
+      original()
    end
 end
 
-function M.keymap_close(key)
+---Close preview and open fold or execute original mapping.
+---@param original function
+function M.mapping.close_preview_open_fold(original)
    if fn.foldclosed('.') ~= -1 and not g.fold_preview_cocked then
       api.nvim_command('normal! zv')
       if not vim.tbl_isempty(M.service_functions) then
@@ -193,8 +213,17 @@ function M.keymap_close(key)
    elseif fn.foldclosed('.') ~= -1 then
       api.nvim_command('normal! zv') -- open fold
    else
-      api.nvim_command('normal! '..vim.v.count1..key)
+      original()
    end
+end
+
+---Close preview and execute original mapping.
+---@param original function
+function M.mapping.close_preview(original)
+   if not vim.tbl_isempty(M.service_functions) then
+      vim.defer_fn(M.service_functions.close, 1)
+   end
+   original()
 end
 
 ---For backward compatibility
