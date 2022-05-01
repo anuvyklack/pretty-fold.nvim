@@ -1,5 +1,4 @@
 local warn = require("pretty-fold.util").warn
-local available, keymap_amend = pcall(require, 'keymap-amend')
 local api = vim.api
 local bo = vim.bo
 local wo = vim.wo
@@ -18,11 +17,6 @@ M.config = {
 function M.setup(config)
    if vim.fn.has('nvim-0.7') ~= 1 then
       warn('Neovim v0.7 or higher is required')
-      return
-   end
-
-   if not available then
-      warn('the "anuvyklack/nvim-keymap-amend" plugin is required for key mappings to working')
       return
    end
 
@@ -51,6 +45,11 @@ function M.setup(config)
 
    g.fold_preview_cocked = true
    if M.config.default_keybindings then
+      local available, keymap_amend = pcall(require, 'keymap-amend')
+      if not available then
+        warn('The "anuvyklack/nvim-keymap-amend" plugin is required for preview key mappings to work.')
+        return
+      end
       keymap_amend('n', 'h',  M.mapping.show_close_preview_open_fold)
       keymap_amend('n', 'l',  M.mapping.close_preview_open_fold)
       keymap_amend('n', 'zo', M.mapping.close_preview)
