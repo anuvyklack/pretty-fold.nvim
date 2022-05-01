@@ -55,7 +55,7 @@ function M.setup(config)
       keymap_amend('n', 'l',  M.mapping.close_preview_open_fold)
       keymap_amend('n', 'zo', M.mapping.close_preview)
       keymap_amend('n', 'zO', M.mapping.close_preview)
-      keymap_amend('n', 'zc', M.mapping.close_preview)
+      keymap_amend('n', 'zc', M.mapping.close_preview_without_defer)
    end
 end
 
@@ -222,6 +222,13 @@ end
 function M.mapping.close_preview(original)
    if not vim.tbl_isempty(M.service_functions) then
       vim.defer_fn(M.service_functions.close, 1)
+   end
+   original()
+end
+
+function M.mapping.close_preview_without_defer(original)
+   if not vim.tbl_isempty(M.service_functions) then
+      M.service_functions.close()
    end
    original()
 end

@@ -387,7 +387,7 @@ config = {
 
 ### Custom keymaps
 
-If you would like to setup your custom keymapings, there are tree functions in
+If you would like to setup your custom keymapings, there are next functions in
 ```lua
 require('pretty-fold.preview').mapping
 ```
@@ -404,6 +404,9 @@ plugin so read its documentation for more info how to use them.
 
 * `close_preview(original)` — close preview (if opened) and execute original mapping.
 
+* `close_preview_without_defer(original)` — the same as previous, but close
+  preview without defer.
+
 For example here are original key mappings:
 
 ```lua
@@ -413,7 +416,7 @@ keymap_amend('n', 'h',  mapping.show_close_preview_open_fold)
 keymap_amend('n', 'l',  mapping.close_preview_open_fold)
 keymap_amend('n', 'zo', mapping.close_preview)
 keymap_amend('n', 'zO', mapping.close_preview)
-keymap_amend('n', 'zc', mapping.close_preview)
+keymap_amend('n', 'zc', mapping.close_preview_without_defer)
 ```
 
 ## Additional information
