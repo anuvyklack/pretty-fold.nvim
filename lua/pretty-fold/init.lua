@@ -7,7 +7,9 @@ local api = vim.api
 ffi.cdef('int curwin_col_off(void);')
 
 local M = {
-   foldtext = {} ---Table with all 'foldtext' functions.
+   foldtext = {}, -- Table with all 'foldtext' functions.
+   ft_ignore = {} -- Set with filetypes to be ignored.
+   -- config = {}
 }
 
 -- Labels for each vim foldmethod (:help foldmethod) configuration table and one
@@ -56,7 +58,11 @@ local default_config = {
       { '%(', ')' }, -- % to escape lua pattern char
       { '%[', ']' }, -- % to escape lua pattern char
    },
+
+   ft_ignore = { 'neorg' }
 }
+
+for _, ft in ipairs(default_config.ft_ignore) do M.ft_ignore[ft] = true end
 
 -- The main function which produses the string which will be shown
 -- in the fold line.
@@ -113,6 +119,16 @@ local function configure(config)
          config = { global = config }
       end
 
+      -- Sort out with ft_ignore option.
+      for fdm, _ in pairs(config) do
+         if config[fdm].ft_ignore then
+            for _, ft in ipairs(config[fdm].ft_ignore) do
+               M.ft_ignore[ft] = true
+            end
+            config[fdm].ft_ignore = nil
+         end
+      end
+
       -- Check if deprecated option lables was used.
       do -- Check if deprecated option lables were used.
          local old = 'comment_signs'
@@ -156,14 +172,33 @@ end
 -- Setup global configuration.
 ---@param config table
 function M.setup(config)
-   config = configure(config or {})
+   config = configure(config)
+   -- M.config.global = config
    M.foldtext.global = function() return fold_text(config) end
    vim.o.foldtext = 'v:lua.require("pretty-fold").foldtext.global()'
+
+   vim.api.nvim_create_autocmd('BufWinEnter', {
+      callback = function()
+         local filetype = vim.bo.filetype
+         if M.ft_ignore[filetype] then return end
+         if M.foldtext[filetype] then
+            vim.wo.foldtext = string.format("v:lua.require('pretty-fold').foldtext.%s()", filetype)
+         else
+            vim.wo.foldtext = "v:lua.require('pretty-fold').foldtext.global()"
+         end
+      end
+   })
 end
 
 -- Setup filetype specific configuration.
-function M.ft_setup()
-   util.warn('ft_setup() function was moved to nightly branch. See README: "Setup for particular filetype"')
+---@param filetype string
+---@param config table
+function M.ft_setup(filetype, config)
+   if not M.foldtext[filetype] then
+      config = configure(config)
+      -- M.config[filetype] = config
+      M.foldtext[filetype] = function() return fold_text(config) end
+   end
 end
 
 return M

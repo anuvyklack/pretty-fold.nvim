@@ -1,5 +1,10 @@
 # Pretty Fold
 
+> :warning: **WARNING**: Neovim v0.7 or higher is required
+>
+> There is a [0.6 branch](https://github.com/anuvyklack/pretty-fold.nvim/tree/0.6)
+> which is lack of some features.
+
 **Pretty Fold** is a lua plugin for Neovim which has two separate features:
 * Framework for easy foldtext customization. Filetype specific and foldmethod
   specific configuration is supported.
@@ -13,6 +18,7 @@ Installation and setup example with [packer](https://github.com/wbthomason/packe
 
 ```lua
 use{ 'anuvyklack/pretty-fold.nvim',
+   requires = 'anuvyklack/nvim-keymap-amend' -- only for preview
    config = function()
       require('pretty-fold').setup()
       require('pretty-fold.preview').setup()
@@ -189,11 +195,7 @@ Examples for lua (Lua patterns are explained with railroad diagrams):
 matchup_patterns = {
    -- ╟─ Start of line ──╭───────╮── "do" ── End of line ─╢
    --                    ╰─ WSP ─╯
-   { '^%s*do$', 'end' }, -- "do ... end" blocks
-
-   -- ╟─ Start of line ──╭───────╮── "do" ──╭───────╮ ─╢
-   --                    ╰─ WSP ─╯          ╰─ WSP ─╯
-   { '^%s*do%s', 'end' }, -- "do ... end" blocks with comment
+   { '^%s*do$', 'end' }, -- `do ... end` blocks
 
    -- ╟─ Start of line ──╭───────╮── "if" ─╢
    --                    ╰─ WSP ─╯
@@ -205,7 +207,7 @@ matchup_patterns = {
 
    -- ╟─ "function" ──╭───────╮── "(" ─╢
    --                 ╰─ WSP ─╯
-   { 'function%s*%(', 'end' }, -- "function(" or "function ("
+   { 'function%s*%(', 'end' }, -- 'function(' or 'function ('
 
    {  '{', '}' },
    { '%(', ')' }, -- % to escape lua pattern char
@@ -274,11 +276,10 @@ This plugin provides two setup functions.
 ```lua
 require('pretty-fold').ft_setup('lua', {
    matchup_patterns = {
-      { '^%s*do$', 'end' },  -- do ... end blocks
-      { '^%s*do%s', 'end' }, -- do ... end blocks with comment
-      { '^%s*if', 'end' },   -- if ... end
-      { '^%s*for', 'end' },  -- for
-      { 'function%s*%(', 'end' }, -- 'function(' or 'function ('
+      { '^%s*do$', 'end' }, -- do ... end blocks
+      { '^%s*if', 'end' },  -- if ... end
+      { '^%s*for', 'end' }, -- for
+      { 'function%s*%(', 'end' }, -- 'function( or 'function (''
       {  '{', '}' },
       { '%(', ')' }, -- % to escape lua pattern char
       { '%[', ']' }, -- % to escape lua pattern char
@@ -378,10 +379,11 @@ require('pretty-fold').ft_setup('cpp', {
 I personally don't want to learn a new key combination to open fold preview.
 So I tried to create something that would feel natural.
 
-The preview open can be mapped to `h` or `l` key.  This key will be work as
-usual until you move cursor somewhere inside folded region.  Then on first
-press on this key, the preview floating window will be opened. On second press
-fold will be opened and preview will be closed.
+With default keybindings the `h` and `l` are utilised.  On first press of `h`
+key, if cursor is somewhere inside closed folded region, the preview will be
+shown.  On second press the preview will be closed and fold will be opened.
+The `l` key, with opened preview, will close it and open fold.  In all other
+cases this keys will working as usual.
 
 A preview window also will be closed on any cursor move, changing mode, or
 buffer leaving.
@@ -389,12 +391,8 @@ buffer leaving.
 To enable this feature call
 
 ```lua
-require('pretty-fold.preview').setup {
-   key = 'h', -- choose 'h' or 'l' key
-}
+require('pretty-fold.preview').setup()
 ```
-
-**Warning:** Only `h` or `l` keys can be passed, any other will cause an error.
 
 ### Configuration
 
@@ -402,7 +400,7 @@ Available settngs with default values:
 
 ```lua
 config = {
-   key = 'h', -- 'h', 'l' or nil (if you would like to set your own keybinding)
+   default_keybindings = true,
 
    -- 'none', "single", "double", "rounded", "solid", 'shadow' or table
    -- For explanation see: :help nvim_open_win()
@@ -410,14 +408,33 @@ config = {
 }
 ```
 
-### Custom preview mapping
+### Custom keymaps
 
-If you would like to create your custom preview mapping check
-[lua/pretty-fold/preview.lua](https://github.com/anuvyklack/pretty-fold.nvim/blob/master/lua/pretty-fold/preview.lua)
-file. The main function is `show_preview()` which creates preview floating
-window and setup autocommands to close it and change its size on scrolling and
-vim resizing.
+If you would like to setup your custom keymapings, there are tree functions in
+`require('pretty-fold.preview').keymap` table for this.  They are meant to be
+used with [nvim-keymap-amend](https://github.com/anuvyklack/nvim-keymap-amend)
+plugin so read its documentation for more info how to use them.
 
+* `show_close_preview_open_fold(original)` — show preview when cursor is insed
+  fold.  If preview is already shown, close preview and open fold.  Otherway
+  execute original mapping.
+
+* `close_preview_open_fold(original)` — close preview (if oppned) and open fold.
+  Otherway execute original mapping.
+
+* `close_preview(original)` — close preview (if oppned) and execute original mapping.
+
+For example here are original key mappings:
+
+```lua
+local keymap_amend = require('keymap-amend')
+local mapping = require('pretty-fold.preview').mapping
+keymap_amend('n', 'h',  mapping.show_close_preview_open_fold)
+keymap_amend('n', 'l',  mapping.close_preview_open_fold)
+keymap_amend('n', 'zo', mapping.close_preview)
+keymap_amend('n', 'zO', mapping.close_preview)
+keymap_amend('n', 'zc', mapping.close_preview)
+```
 
 ## Additional information
 

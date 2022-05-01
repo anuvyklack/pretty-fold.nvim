@@ -1,19 +1,31 @@
+local warn = require("pretty-fold.util").warn
+local available, keymap_amend = pcall(require, 'keymap-amend')
 local api = vim.api
 local bo = vim.bo
 local wo = vim.wo
 local fn = vim.fn
 local g = vim.g
+local augroup_name = 'fold_preview'
 local M = {}
+M.service_functions = {}
 
 M.config = {
-   key = 'h', -- Only 'h' or 'l' keys are supported.
+   default_keybindings = true,
    border = {' ', '', ' ', ' ', ' ', ' ', ' ', ' '},
 }
 
-_G.pretty_fold_preview = {}
-
 ---@param config table
 function M.setup(config)
+   if vim.fn.has('nvim-0.7') ~= 1 then
+      warn('Neovim v0.7 or higher is required')
+      return
+   end
+
+   if not available then
+      warn('the "anuvyklack/nvim-keymap-amend" plugin is required for key mappings to working')
+      return
+   end
+
    M.config = vim.tbl_deep_extend('force', M.config, config or {})
    config = M.config
 
@@ -37,17 +49,13 @@ function M.setup(config)
       assert(false, 'Invalid border type or value')
    end
 
-   if M.config.key then
-      local key = M.config.key
-      assert(key == 'h' or key == 'l', "Only 'h' or 'l' keys are supported!")
-      local second_key = key == 'h' and 'l' or 'h'
-
-      g.fold_preview_cocked = true
-      vim.cmd(string.format([[
-         nnoremap %s <cmd>lua require('pretty-fold.preview').keymap_open_close('%s')<cr>
-         nnoremap %s <cmd>lua require('pretty-fold.preview').keymap_close('%s')<cr>
-         ]], key, key, second_key, second_key
-      ))
+   g.fold_preview_cocked = true
+   if M.config.default_keybindings then
+      keymap_amend('n', 'h',  M.mapping.show_close_preview_open_fold)
+      keymap_amend('n', 'l',  M.mapping.close_preview_open_fold)
+      keymap_amend('n', 'zo', M.mapping.close_preview)
+      keymap_amend('n', 'zO', M.mapping.close_preview)
+      keymap_amend('n', 'zc', M.mapping.close_preview)
    end
 end
 
@@ -60,11 +68,8 @@ function M.show_preview()
    ---@type number
    local curbufnr = api.nvim_get_current_buf()
 
-   _G.pretty_fold_preview[curbufnr] = {}
-
    local fold_start = fn.foldclosed('.') -- '.' is the current line
    if fold_start == -1 then return end
-
    local fold_end = fn.foldclosedend('.')
 
    ---The number of folded lines.
@@ -111,8 +116,8 @@ function M.show_preview()
    local winid = api.nvim_open_win(bufnr, false, {
       border = config.border,
       relative = 'win',
-      bufpos = { -- Zero-indexed, that's why minus one.
-         fold_start - 1,
+      bufpos = {
+         fold_start - 1, -- zero-indexed, that's why minus one
          indent,
       },
       -- The position of the window relative to 'bufos' field.
@@ -128,68 +133,97 @@ function M.show_preview()
    wo[winid].foldenable = false
    wo[winid].signcolumn = 'no'
 
-   _G.pretty_fold_preview[curbufnr].close = function()
+   function M.service_functions.close()
       api.nvim_win_close(winid, false)
       api.nvim_buf_delete(bufnr, {force = true, unload = false})
-      _G.pretty_fold_preview[curbufnr] = nil
-      vim.cmd([[augroup fold_preview | au! | augroup END]])
+      M.service_functions = {}
+      api.nvim_create_augroup(augroup_name, { clear = true })
       vim.g.fold_preview_cocked = true
    end
 
-   _G.pretty_fold_preview[curbufnr].scroll = function()
+   function M.service_functions.scroll()
       room_below = api.nvim_win_get_height(0) - fn.winline() + 1
       api.nvim_win_set_height(winid,
          fold_size < room_below and fold_size or room_below)
    end
 
-   _G.pretty_fold_preview[curbufnr].resize = function()
+   function M.service_functions.resize()
       room_right = api.nvim_win_get_width(0) - gutter_width - indent
       api.nvim_win_set_width(winid,
          max_line_len < room_right and max_line_len or room_right)
    end
 
-   vim.cmd(string.format([[
-      augroup fold_preview
-         au!
-         au CursorMoved,BufLeave,CmdlineEnter,InsertEnter <buffer> ++once lua _G.pretty_fold_preview[%d].close()
-         au WinScrolled <buffer> lua _G.pretty_fold_preview[%d].scroll()
-         au VimResized  <buffer> lua _G.pretty_fold_preview[%d].resize()
-      augroup END
-      ]], curbufnr, curbufnr, curbufnr
-   ))
+   api.nvim_create_augroup(augroup_name, { clear = true })
+
+   -- close
+   api.nvim_create_autocmd({'CursorMoved', 'ModeChanged', 'BufLeave'}, {
+      group = augroup_name,
+      once = true,
+      buffer = curbufnr,
+      callback = M.service_functions.close
+   })
+
+   -- window scrolled
+   api.nvim_create_autocmd('WinScrolled', {
+      group = augroup_name,
+      buffer = curbufnr,
+      callback = M.service_functions.scroll
+   })
+
+   -- vim resize
+   api.nvim_create_autocmd('VimResized', {
+      group = augroup_name,
+      buffer = curbufnr,
+      callback = M.service_functions.resize
+   })
 
 end
 
-function M.keymap_open_close(key)
+
+---Functions in this table are meant to be used with the next plugin:
+--https://github.com/anuvyklack/nvim-keymap-amend
+M.mapping = {}
+
+---Show preview or close preview and open fold or execute original mapping.
+---@param original function
+function M.mapping.show_close_preview_open_fold(original)
    if fn.foldclosed('.') ~= -1 and g.fold_preview_cocked then
       g.fold_preview_cocked = false
       M.show_preview()
-
    elseif fn.foldclosed('.') ~= -1 and not g.fold_preview_cocked then
-      api.nvim_command('normal! zv')
-      local bufnr = api.nvim_get_current_buf()
-      if _G.pretty_fold_preview[bufnr] then
+      api.nvim_command('normal! zv') -- open fold
+      if not vim.tbl_isempty(M.service_functions) then
          -- For smoothness to avoid annoying screen flickering.
-         fn.timer_start(1, _G.pretty_fold_preview[bufnr].close)
+         vim.defer_fn(M.service_functions.close, 1)
       end
    else
-      api.nvim_command('normal! '..vim.v.count1..key)
+      original()
    end
 end
 
-function M.keymap_close(key)
+---Close preview and open fold or execute original mapping.
+---@param original function
+function M.mapping.close_preview_open_fold(original)
    if fn.foldclosed('.') ~= -1 and not g.fold_preview_cocked then
       api.nvim_command('normal! zv')
-      local bufnr = api.nvim_get_current_buf()
-      if _G.pretty_fold_preview[bufnr] then
+      if not vim.tbl_isempty(M.service_functions) then
          -- For smoothness to avoid annoying screen flickering.
-         fn.timer_start(1, _G.pretty_fold_preview[bufnr].close)
+         vim.defer_fn(M.service_functions.close, 1)
       end
    elseif fn.foldclosed('.') ~= -1 then
-      api.nvim_command('normal! zv')
+      api.nvim_command('normal! zv') -- open fold
    else
-      api.nvim_command('normal! '..vim.v.count1..key)
+      original()
    end
+end
+
+---Close preview and execute original mapping.
+---@param original function
+function M.mapping.close_preview(original)
+   if not vim.tbl_isempty(M.service_functions) then
+      vim.defer_fn(M.service_functions.close, 1)
+   end
+   original()
 end
 
 ---For backward compatibility

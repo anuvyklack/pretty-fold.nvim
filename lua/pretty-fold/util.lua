@@ -4,7 +4,7 @@ local util = {}
 ---@param msg string
 function util.warn(msg)
    vim.schedule(function()
-      vim.notify('[pretty-fold.nvim] '..msg, vim.log.levels.WARN)
+      vim.notify_once('[pretty-fold.nvim] '..msg, vim.log.levels.WARN)
    end)
 end
 
