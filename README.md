@@ -377,7 +377,7 @@ Available settngs with default values:
 
 ```lua
 config = {
-   default_keybindings = true,
+   default_keybindings = true, -- Set to false to disable default keybindings
 
    -- 'none', "single", "double", "rounded", "solid", 'shadow' or table
    -- For explanation see: :help nvim_open_win()
@@ -388,7 +388,10 @@ config = {
 ### Custom keymaps
 
 If you would like to setup your custom keymapings, there are tree functions in
-`require('pretty-fold.preview').keymap` table for this.  They are meant to be
+```lua
+require('pretty-fold.preview').keymap
+```
+table for this.  They are meant to be
 used with [nvim-keymap-amend](https://github.com/anuvyklack/nvim-keymap-amend)
 plugin so read its documentation for more info how to use them.
 
