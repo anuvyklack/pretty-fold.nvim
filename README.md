@@ -1,5 +1,17 @@
 # Pretty Fold
 
+> :warning: **WARNING**: This is outdated version of plugin which is lack
+> filetype setup and custom mappings features.
+
+> To install it with [packer](https://github.com/wbthomason/packer.nvim) use
+> next snippet:
+>
+> ```lua
+> use{ 'anuvyklack/pretty-fold.nvim',
+>    branch = '0.6',
+>    ...
+> }
+
 **Pretty Fold** is a lua plugin for Neovim which has two separate features:
 * Framework for easy foldtext customization. Filetype specific and foldmethod
   specific configuration is supported.
@@ -232,27 +244,8 @@ If `process_comment_signs = 'spaces'` is set, the output will be
 ### Setup for particular filetype
 
 > :warning: **WARNING**: This functionality is available only in the
-> [nightly](https://github.com/anuvyklack/pretty-fold.nvim/tree/nightly)
-> branch.
->
-> Due to the `foldtext` is a local to window option and for this functionality
-> we need it to work as local to buffer option, we have to set desired value
-> every time buffer in the window changed.
->
-> For this the plugin need to set an autocommand. My research shown that only
-> the latest autocommands Lua API suites for this, but it available only in the
-> **Neovim 0.7-nightly**. When it will be released the nightly branch will
-> become default.
->
-> To install the pretty-fold nightly branch with
-> [packer](https://github.com/wbthomason/packer.nvim) use next snippet:
->
-> ```lua
-> use{ 'anuvyklack/pretty-fold.nvim',
->    branch = 'nightly',
->    ...
-> }
-> ```
+> [master](https://github.com/anuvyklack/pretty-fold.nvim/tree/master)
+> branch, which is requires Neovim v0.7 or higher.
 
 This plugin provides two setup functions.
 
@@ -409,15 +402,6 @@ config = {
    border = {' ', '', ' ', ' ', ' ', ' ', ' ', ' '},
 }
 ```
-
-### Custom preview mapping
-
-If you would like to create your custom preview mapping check
-[lua/pretty-fold/preview.lua](https://github.com/anuvyklack/pretty-fold.nvim/blob/master/lua/pretty-fold/preview.lua)
-file. The main function is `show_preview()` which creates preview floating
-window and setup autocommands to close it and change its size on scrolling and
-vim resizing.
-
 
 ## Additional information
 
