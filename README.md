@@ -389,7 +389,7 @@ config = {
 
 If you would like to setup your custom keymapings, there are tree functions in
 ```lua
-require('pretty-fold.preview').keymap
+require('pretty-fold.preview').mapping
 ```
 table for this.  They are meant to be
 used with [nvim-keymap-amend](https://github.com/anuvyklack/nvim-keymap-amend)
