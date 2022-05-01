@@ -226,12 +226,4 @@ function M.mapping.close_preview(original)
    original()
 end
 
----For backward compatibility
----@param key?
----| '"h"'
----| '"l"'
-function M.setup_keybinding(key)
-   M.setup{ key = key }
-end
-
 return M

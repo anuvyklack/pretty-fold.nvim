@@ -128,28 +128,6 @@ local function configure(config)
             config[fdm].ft_ignore = nil
          end
       end
-
-      -- Check if deprecated option lables was used.
-      do -- Check if deprecated option lables were used.
-         local old = 'comment_signs'
-         local new = 'process_comment_signs'
-         local status = false
-
-         for _, k in ipairs(vim.tbl_keys(config)) do
-            if config[k][old] and type(config[k][old]) == "string"
-            then
-               config[k][new], config[k][old] = config[k][old], nil
-               status = true
-            end
-         end
-
-         if status then
-            util.warn(string.format(
-               '"%s" option was renamed to "%s". Please update your config to avoid errors in the future.',
-                old, new
-            ))
-         end
-      end
    else
       config = { global = {} }
    end
