@@ -395,14 +395,14 @@ table for this.  They are meant to be
 used with [nvim-keymap-amend](https://github.com/anuvyklack/nvim-keymap-amend)
 plugin so read its documentation for more info how to use them.
 
-* `show_close_preview_open_fold(original)` — show preview when cursor is insed
+* `show_close_preview_open_fold(original)` — show preview when cursor is inside
   fold.  If preview is already shown, close preview and open fold.  Otherway
   execute original mapping.
 
-* `close_preview_open_fold(original)` — close preview (if oppned) and open fold.
+* `close_preview_open_fold(original)` — close preview (if opened) and open fold.
   Otherway execute original mapping.
 
-* `close_preview(original)` — close preview (if oppned) and execute original mapping.
+* `close_preview(original)` — close preview (if opened) and execute original mapping.
 
 For example here are original key mappings:
 
