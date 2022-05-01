@@ -233,29 +233,6 @@ If `process_comment_signs = 'spaces'` is set, the output will be
 
 ### Setup for particular filetype
 
-> :warning: **WARNING**: This functionality is available only in the
-> [nightly](https://github.com/anuvyklack/pretty-fold.nvim/tree/nightly)
-> branch.
->
-> Due to the `foldtext` is a local to window option and for this functionality
-> we need it to work as local to buffer option, we have to set desired value
-> every time buffer in the window changed.
->
-> For this the plugin need to set an autocommand. My research shown that only
-> the latest autocommands Lua API suites for this, but it available only in the
-> **Neovim 0.7-nightly**. When it will be released the nightly branch will
-> become default.
->
-> To install the pretty-fold nightly branch with
-> [packer](https://github.com/wbthomason/packer.nvim) use next snippet:
->
-> ```lua
-> use{ 'anuvyklack/pretty-fold.nvim',
->    branch = 'nightly',
->    ...
-> }
-> ```
-
 This plugin provides two setup functions.
 
 1) The first one setup configuration which will be used for all filetypes for
