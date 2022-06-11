@@ -134,6 +134,10 @@ function M.show_preview()
    wo[winid].signcolumn = 'no'
 
    function M.service_functions.close()
+      -- close() can be called multiple times for the same window.
+      if not api.nvim_win_is_valid(winid) then
+         return
+      end
       api.nvim_win_close(winid, false)
       api.nvim_buf_delete(bufnr, {force = true, unload = false})
       M.service_functions = {}
