@@ -18,7 +18,7 @@ Installation and setup example with [packer](https://github.com/wbthomason/packe
 
 ```lua
 use{ 'anuvyklack/pretty-fold.nvim',
-   requires = 'anuvyklack/nvim-keymap-amend' -- only for preview
+   requires = 'anuvyklack/nvim-keymap-amend', -- only for preview
    config = function()
       require('pretty-fold').setup()
       require('pretty-fold.preview').setup()
