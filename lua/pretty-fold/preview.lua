@@ -4,9 +4,10 @@ local bo = vim.bo
 local wo = vim.wo
 local fn = vim.fn
 local g = vim.g
-local augroup_name = 'fold_preview'
 local M = {}
-M.service_functions = {}
+
+local augroup_name = 'fold_preview'
+local augroup_id = api.nvim_create_augroup(augroup_name, { clear = true })
 
 M.config = {
    default_keybindings = true,
@@ -47,7 +48,7 @@ function M.setup(config)
    if M.config.default_keybindings then
       local available, keymap_amend = pcall(require, 'keymap-amend')
       if not available then
-        warn('The "anuvyklack/nvim-keymap-amend" plugin is required for preview key mappings to work.')
+        warn('The "anuvyklack/nvim-keymap-amend" plugin is required for preview key mappings to work')
         return
       end
       keymap_amend('n', 'h',  M.mapping.show_close_preview_open_fold)
@@ -66,6 +67,10 @@ function M.show_preview()
    ---Current buffer ID
    ---@type number
    local curbufnr = api.nvim_get_current_buf()
+
+   ---Current window ID, i.e window from which preview was opened.
+   ---@type number
+   local curwin = api.nvim_get_current_win()
 
    -- Some plugins (for example 'beauwilliams/focus.nvim') change this option,
    -- but we need it to make scrolling work correctly.
@@ -101,7 +106,6 @@ function M.show_preview()
    end
 
    local bufnr = api.nvim_create_buf(false, true)
-   -- local bufnr = api.nvim_create_buf(true, true)
    api.nvim_buf_set_lines(bufnr, 0, 1, false, folded_lines)
    bo[bufnr].filetype = bo.filetype
    bo[bufnr].modifiable = false
@@ -124,7 +128,7 @@ function M.show_preview()
          fold_start - 1, -- zero-indexed, that's why minus one
          indent,
       },
-      -- The position of the window relative to 'bufos' field.
+      -- The position of the window relative to 'bufpos' field.
       row = config.border_shift[1],
       col = config.border_shift[4],
 
@@ -136,58 +140,50 @@ function M.show_preview()
    })
    wo[winid].foldenable = false
    wo[winid].signcolumn = 'no'
+   wo[winid].conceallevel = wo[curwin].conceallevel
 
-   function M.service_functions.close()
-      -- close() can be called multiple times for the same window.
-      if not api.nvim_win_is_valid(winid) then
-         return
+   function M.close_preview()
+      if api.nvim_win_is_valid(winid) then
+         api.nvim_win_close(winid, false)
       end
-      api.nvim_win_close(winid, false)
       api.nvim_buf_delete(bufnr, {force = true, unload = false})
-      M.service_functions = {}
-      api.nvim_create_augroup(augroup_name, { clear = true })
       vim.o.winminheight = winminheight
+      vim.api.nvim_clear_autocmds({ group = augroup_id })
+      M.close_preview = nil
       vim.g.fold_preview_cocked = true
    end
 
-   function M.service_functions.scroll()
-      room_below = api.nvim_win_get_height(0) - fn.winline() + 1
-      api.nvim_win_set_height(winid,
-         fold_size < room_below and fold_size or room_below)
-   end
-
-   function M.service_functions.resize()
-      room_right = api.nvim_win_get_width(0) - gutter_width - indent
-      api.nvim_win_set_width(winid,
-         max_line_len < room_right and max_line_len or room_right)
-   end
-
-   api.nvim_create_augroup(augroup_name, { clear = true })
-
    -- close
    api.nvim_create_autocmd({'CursorMoved', 'ModeChanged', 'BufLeave'}, {
-      group = augroup_name,
+      group = augroup_id,
       once = true,
       buffer = curbufnr,
-      callback = M.service_functions.close
+      callback = M.close_preview
    })
 
    -- window scrolled
    api.nvim_create_autocmd('WinScrolled', {
-      group = augroup_name,
+      group = augroup_id,
       buffer = curbufnr,
-      callback = M.service_functions.scroll
+      callback = function()
+         room_below = api.nvim_win_get_height(0) - fn.winline() + 1
+         api.nvim_win_set_height(winid,
+            fold_size < room_below and fold_size or room_below)
+      end
    })
 
    -- vim resize
    api.nvim_create_autocmd('VimResized', {
-      group = augroup_name,
+      group = augroup_id,
       buffer = curbufnr,
-      callback = M.service_functions.resize
+      callback = function()
+         room_right = api.nvim_win_get_width(0) - gutter_width - indent
+         api.nvim_win_set_width(winid,
+            max_line_len < room_right and max_line_len or room_right)
+      end
    })
 
 end
-
 
 ---Functions in this table are meant to be used with the next plugin:
 --https://github.com/anuvyklack/nvim-keymap-amend
@@ -201,9 +197,9 @@ function M.mapping.show_close_preview_open_fold(original)
       M.show_preview()
    elseif fn.foldclosed('.') ~= -1 and not g.fold_preview_cocked then
       api.nvim_command('normal! zv') -- open fold
-      if not vim.tbl_isempty(M.service_functions) then
+      if M.close_preview then
          -- For smoothness to avoid annoying screen flickering.
-         vim.defer_fn(M.service_functions.close, 1)
+         vim.defer_fn(M.close_preview, 1)
       end
    else
       original()
@@ -215,9 +211,8 @@ end
 function M.mapping.close_preview_open_fold(original)
    if fn.foldclosed('.') ~= -1 and not g.fold_preview_cocked then
       api.nvim_command('normal! zv')
-      if not vim.tbl_isempty(M.service_functions) then
-         -- For smoothness to avoid annoying screen flickering.
-         vim.defer_fn(M.service_functions.close, 1)
+      if M.close_preview then
+         vim.defer_fn(M.close_preview, 1)
       end
    elseif fn.foldclosed('.') ~= -1 then
       api.nvim_command('normal! zv') -- open fold
@@ -229,16 +224,14 @@ end
 ---Close preview and execute original mapping.
 ---@param original function
 function M.mapping.close_preview(original)
-   if not vim.tbl_isempty(M.service_functions) then
-      vim.defer_fn(M.service_functions.close, 1)
+   if M.close_preview then
+      vim.defer_fn(M.close_preview, 1)
    end
    original()
 end
 
 function M.mapping.close_preview_without_defer(original)
-   if not vim.tbl_isempty(M.service_functions) then
-      M.service_functions.close()
-   end
+   if M.close_preview then M.close_preview() end
    original()
 end
 
