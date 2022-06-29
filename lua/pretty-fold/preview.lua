@@ -67,6 +67,11 @@ function M.show_preview()
    ---@type number
    local curbufnr = api.nvim_get_current_buf()
 
+   -- Some plugins (for example 'beauwilliams/focus.nvim') change this option,
+   -- but we need it to make scrolling work correctly.
+   local winminheight = vim.o.winminheight
+   vim.o.winminheight = 1
+
    local fold_start = fn.foldclosed('.') -- '.' is the current line
    if fold_start == -1 then return end
    local fold_end = fn.foldclosedend('.')
@@ -141,6 +146,7 @@ function M.show_preview()
       api.nvim_buf_delete(bufnr, {force = true, unload = false})
       M.service_functions = {}
       api.nvim_create_augroup(augroup_name, { clear = true })
+      vim.o.winminheight = winminheight
       vim.g.fold_preview_cocked = true
    end
 
