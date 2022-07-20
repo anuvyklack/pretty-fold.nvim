@@ -1,5 +1,4 @@
 local ffi = require("ffi")
-local util = require("pretty-fold.util")
 local wo = vim.wo
 local fn = vim.fn
 local api = vim.api

@@ -5,10 +5,9 @@
 > There is a [0.6 branch](https://github.com/anuvyklack/pretty-fold.nvim/tree/0.6)
 > which is lack of some features.
 
-**Pretty Fold** is a lua plugin for Neovim which has two separate features:
-* Framework for easy foldtext customization. Filetype specific and foldmethod
-  specific configuration is supported.
-* Folded region preview (*like in QtCreator*).
+**Pretty Fold** is a lua plugin for Neovim which provides framework for easy
+foldtext customization. Filetype specific and foldmethod specific configuration
+is supported.
 
 https://user-images.githubusercontent.com/13056013/148261501-56677c8f-24a7-4c45-b008-8c1863bf06e8.mp4
 
@@ -18,17 +17,15 @@ Installation and setup example with [packer](https://github.com/wbthomason/packe
 
 ```lua
 use{ 'anuvyklack/pretty-fold.nvim',
-   requires = 'anuvyklack/nvim-keymap-amend', -- only for preview
    config = function()
       require('pretty-fold').setup()
-      require('pretty-fold.preview').setup()
    end
 }
 ```
 
 ## Foldtext configuration
 
-Pretty-fold.nvim comes with the following defaults
+The plugin comes with the following defaults
 (the description of each option is below):
 
 ```lua
@@ -353,71 +350,7 @@ require('pretty-fold').ft_setup('cpp', {
 
 ## Preview
 
-I personally don't want to learn a new key combination to open fold preview.
-So I tried to create something that would feel natural.
-
-With default keybindings the `h` and `l` are utilised.  On first press of `h`
-key, if cursor is somewhere inside closed folded region, the preview will be
-shown.  On second press the preview will be closed and fold will be opened.
-The `l` key, with opened preview, will close it and open fold.  In all other
-cases this keys will working as usual.
-
-A preview window also will be closed on any cursor move, changing mode, or
-buffer leaving.
-
-To enable this feature call
-
-```lua
-require('pretty-fold.preview').setup()
-```
-
-### Configuration
-
-Available settngs with default values:
-
-```lua
-config = {
-   default_keybindings = true, -- Set to false to disable default keybindings
-
-   -- 'none', "single", "double", "rounded", "solid", 'shadow' or table
-   -- For explanation see: :help nvim_open_win()
-   border = {' ', '', ' ', ' ', ' ', ' ', ' ', ' '},
-}
-```
-
-### Custom keymaps
-
-If you would like to setup your custom keymapings, there are next functions in
-```lua
-require('pretty-fold.preview').mapping
-```
-table for this.  They are meant to be
-used with [nvim-keymap-amend](https://github.com/anuvyklack/nvim-keymap-amend)
-plugin so read its documentation for more info how to use them.
-
-* `show_close_preview_open_fold(original)` — show preview when cursor is inside
-  fold.  If preview is already shown, close preview and open fold.  Otherway
-  execute original mapping.
-
-* `close_preview_open_fold(original)` — close preview (if opened) and open fold.
-  Otherway execute original mapping.
-
-* `close_preview(original)` — close preview (if opened) and execute original mapping.
-
-* `close_preview_without_defer(original)` — the same as previous, but close
-  preview without defer.
-
-For example here are original key mappings:
-
-```lua
-local keymap_amend = require('keymap-amend')
-local mapping = require('pretty-fold.preview').mapping
-keymap_amend('n', 'h',  mapping.show_close_preview_open_fold)
-keymap_amend('n', 'l',  mapping.close_preview_open_fold)
-keymap_amend('n', 'zo', mapping.close_preview)
-keymap_amend('n', 'zO', mapping.close_preview)
-keymap_amend('n', 'zc', mapping.close_preview_without_defer)
-```
+Preview module have been moved into separate [plugin](https://github.com/anuvyklack/fold-preview.nvim).
 
 ## Additional information
 
