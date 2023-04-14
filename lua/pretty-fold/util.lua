@@ -75,7 +75,7 @@ function util.deep_pesc(ts)
       if type(s) == 'string' then
          escaped_ts[i] = vim.pesc(s)
       elseif type(s) == 'table' then
-         escaped_ts[i] = util.escape_lua_patterns(s)
+         escaped_ts[i] = util.deep_pesc(s)
       end
    end
    return escaped_ts
